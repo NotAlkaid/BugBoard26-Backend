@@ -2,7 +2,6 @@ package org.ingsw2526_036.bugboard26backend.entities;
 
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -10,8 +9,7 @@ import lombok.NoArgsConstructor;
 @EqualsAndHashCode(callSuper = true)
 @Entity
 @Data
-@AllArgsConstructor
-@NoArgsConstructor
+@NoArgsConstructor //per JPA
 @DiscriminatorValue("ADMIN")
 public class Administrator extends User{
 }
