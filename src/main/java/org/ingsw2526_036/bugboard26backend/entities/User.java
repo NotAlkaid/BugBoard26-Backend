@@ -1,0 +1,25 @@
+package org.ingsw2526_036.bugboard26backend.entities;
+
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Entity
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Inheritance(strategy = InheritanceType.SINGLE_TABLE)
+@DiscriminatorColumn(name = "USERTYPE",  discriminatorType = DiscriminatorType.STRING)
+@Table(name = "User")
+public abstract class User {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    @Column(unique = true,  nullable = false)
+    private String username;
+    @Column(nullable = false)
+    private String password;
+    @Column(unique = true, nullable = false)
+    private String email;
+}
