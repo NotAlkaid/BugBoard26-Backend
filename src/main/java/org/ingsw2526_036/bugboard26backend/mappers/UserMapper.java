@@ -1,0 +1,44 @@
+package org.ingsw2526_036.bugboard26backend.mappers;
+
+import org.ingsw2526_036.bugboard26backend.dtos.UserRequestDto;
+import org.ingsw2526_036.bugboard26backend.dtos.UserResponseDto;
+import org.ingsw2526_036.bugboard26backend.entities.Administrator;
+import org.ingsw2526_036.bugboard26backend.entities.BaseUser;
+import org.ingsw2526_036.bugboard26backend.entities.User;
+import org.springframework.stereotype.Component;
+
+@Component
+public class UserMapper {
+
+    //Prende un utente e restituisce un dto
+    public UserResponseDto toDto(User user) {
+        if (user == null) return null;
+        return new UserResponseDto(
+                user.getId(),
+                user.getUsername(),
+                user.getEmail()
+        );
+    }
+
+    //Prende un dto e restituisce un utente
+    public User toEntity(UserRequestDto userRequestDto) {
+        if (userRequestDto == null) return null;
+
+        User user;
+        if("ADMIN".equalsIgnoreCase(userRequestDto.getType())){
+            user = new Administrator();
+            user.setEmail(userRequestDto.getEmail());
+            user.setUsername(userRequestDto.getUsername());
+            user.setPassword(userRequestDto.getPassword());
+            return user;
+        }
+        else if("BASEUSER".equalsIgnoreCase(userRequestDto.getType())){
+            user = new BaseUser();
+            user.setEmail(userRequestDto.getEmail());
+            user.setUsername(userRequestDto.getUsername());
+            user.setPassword(userRequestDto.getPassword());
+            return user;
+        }
+        return null; // da gestire
+    }
+}
