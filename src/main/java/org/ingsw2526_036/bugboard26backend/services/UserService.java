@@ -19,4 +19,10 @@ public class UserService {
     public User save(User user) {
         return userRepository.save(user);
     }
+
+    public boolean isValid(User user) {
+        boolean condition = user.getEmail().isBlank() ||
+                            user.getPassword().isBlank();
+        return !condition;
+    }
 }

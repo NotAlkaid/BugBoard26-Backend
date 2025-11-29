@@ -12,18 +12,19 @@ public class UserMapper {
 
     //Prende un utente e restituisce un dto
     public UserResponseDto toDto(User user) {
+        String type = "BASEUSER";
         if (user == null) return null;
+        if(user instanceof Administrator) type = "ADMIN";
         return new UserResponseDto(
                 user.getId(),
                 user.getUsername(),
-                user.getEmail()
+                user.getEmail(),
+                type
         );
     }
 
     //Prende un dto e restituisce un utente
     public User toEntity(UserRequestDto userRequestDto) {
-        if (userRequestDto == null) return null;
-
         User user;
         if("ADMIN".equalsIgnoreCase(userRequestDto.getType())){
             user = new Administrator();
@@ -39,6 +40,6 @@ public class UserMapper {
             user.setPassword(userRequestDto.getPassword());
             return user;
         }
-        return null; // da gestire
+        throw new IllegalArgumentException("Unknown user type");
     }
 }

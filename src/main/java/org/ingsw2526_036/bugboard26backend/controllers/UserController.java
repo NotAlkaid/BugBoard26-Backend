@@ -7,6 +7,7 @@ import org.ingsw2526_036.bugboard26backend.mappers.UserMapper;
 import org.ingsw2526_036.bugboard26backend.services.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,7 +24,7 @@ class   UserController {
     }
 
     //Metodo che ritorna una lista di tutti gli utenti nel DB
-    @GetMapping
+    @GetMapping("/getusers")
     public ResponseEntity<List<UserResponseDto>> getAllUsers() {
         List<User> users = userService.findAll();
         List<UserResponseDto> dtousers = users
@@ -33,9 +34,10 @@ class   UserController {
         return ResponseEntity.ok(dtousers);
     }
 
-    @PostMapping
-    public ResponseEntity<UserResponseDto> createUser(@RequestBody UserRequestDto userRequestDto) {
+    @PostMapping("/createuser")
+    public ResponseEntity<UserResponseDto> createUser(@Validated @RequestBody UserRequestDto userRequestDto) {
         User user = userMapper.toEntity(userRequestDto);
+        if(!userService.isValid(user)) throw new IllegalArgumentException("Fields empty or null");
         User saveduser = userService.save(user);
         return ResponseEntity.status(HttpStatus.CREATED).body(userMapper.toDto(saveduser));
     }
