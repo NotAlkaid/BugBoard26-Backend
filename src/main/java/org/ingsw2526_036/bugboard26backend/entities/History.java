@@ -1,10 +1,7 @@
 package org.ingsw2526_036.bugboard26backend.entities;
 
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -20,6 +17,7 @@ import java.sql.Date;
 @Table(name = "History")
 public class History {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @Column(nullable = false, updatable = false)
     @CreationTimestamp
@@ -30,4 +28,13 @@ public class History {
     private String newValue;
     @Column(nullable = false)
     private EditTypeEnum editType;
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+    @ManyToOne
+    @JoinColumn(name = "issue_id", nullable = false)
+    private Issue issue;
+    @ManyToOne
+    @JoinColumn(name = "project_id", nullable = false)
+    private Project project;
 }

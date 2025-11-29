@@ -1,13 +1,11 @@
 package org.ingsw2526_036.bugboard26backend.entities;
 
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.NonNull;
 import org.hibernate.annotations.CreationTimestamp;
 import java.sql.Date;
 
@@ -18,10 +16,15 @@ import java.sql.Date;
 @Table(name = "Comment")
 public class Comment {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @Column(nullable = false)
     private String body;
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private Date date;
+    @ManyToOne
+    @JoinColumn(name = "creator_id", nullable = false)
+    @NonNull
+    private User creator;
 }
