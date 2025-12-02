@@ -1,9 +1,14 @@
 package org.ingsw2526_036.bugboard26backend.exception;
 
+import java.util.ArrayList;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import java.util.List;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -21,5 +26,17 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DuplicateResourceException.class)
     public ResponseEntity<String> handleDuplicateResourceException(DuplicateResourceException exception) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(exception.getMessage());
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<List<String>> handleMethodArgumentNotValidException(MethodArgumentNotValidException exception) {
+        
+        List<String> listaErrori = new ArrayList<>();
+        
+        for (FieldError error : exception.getBindingResult().getFieldErrors()) {
+            String messaggio = error.getField() + ": " + error.getDefaultMessage();
+            listaErrori.add(messaggio);
+        }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(listaErrori);
     }
 }
