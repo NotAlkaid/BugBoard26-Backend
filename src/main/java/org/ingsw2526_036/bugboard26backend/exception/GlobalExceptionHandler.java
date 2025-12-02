@@ -12,4 +12,14 @@ public class GlobalExceptionHandler {
     public ResponseEntity<String> handleIllegalArgumentException(IllegalArgumentException exception) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(exception.getMessage());
     }
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<String> handleResourceNotFoundException(ResourceNotFoundException exception) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(exception.getMessage());
+    }
+
+    @ExceptionHandler(DuplicateResourceException.class)
+    public ResponseEntity<String> handleDuplicateResourceException(DuplicateResourceException exception) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(exception.getMessage());
+    }
 }

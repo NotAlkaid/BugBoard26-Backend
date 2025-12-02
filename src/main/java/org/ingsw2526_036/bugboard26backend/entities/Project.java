@@ -3,7 +3,6 @@ package org.ingsw2526_036.bugboard26backend.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
-import java.sql.Blob;
 import java.util.List;
 
 @Entity
@@ -19,10 +18,9 @@ public class Project {
     @Column(unique = true,  nullable = false)
     @NonNull
     private String name;
-    @Lob
     @Column(nullable = false)
     @NonNull
-    private Blob icon;
+    private byte[] icon; // jpa store byte array as blob
     @ManyToOne
     @JoinColumn(name = "creator_id", nullable = false)
     @NonNull
