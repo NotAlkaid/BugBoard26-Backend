@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.GetMapping;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/projects")
@@ -27,5 +29,15 @@ public class ProjectController {
         Project createdProject = projectService.createProject(projectRequestDto);
         ProjectResponseDto projectResponseDto = projectMapper.toDto(createdProject);
         return ResponseEntity.status(HttpStatus.CREATED).body(projectResponseDto);
+    }
+
+    @GetMapping("/getprojects")
+    public ResponseEntity<List<ProjectResponseDto>> getProjects() {
+        List<Project> projects = projectService.findAll();
+        List<ProjectResponseDto> dtoProjects = projects
+                .stream()
+                .map(projectMapper::toDto)
+                .toList();
+        return ResponseEntity.ok(dtoProjects);
     }
 }
