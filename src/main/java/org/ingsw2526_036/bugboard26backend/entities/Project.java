@@ -19,8 +19,7 @@ public class Project {
     @NonNull
     private String name;
     @Column(nullable = false)
-    @NonNull
-    private byte[] icon; // jpa store byte array as blob
+    private byte @NonNull [] icon; // jpa store byte array as blob
     @ManyToOne
     @JoinColumn(name = "creator_id", nullable = false)
     @NonNull
