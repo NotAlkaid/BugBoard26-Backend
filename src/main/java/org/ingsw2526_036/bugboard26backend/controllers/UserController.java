@@ -1,13 +1,11 @@
 package org.ingsw2526_036.bugboard26backend.controllers;
 
-import org.ingsw2526_036.bugboard26backend.dtos.UserRequestDto;
+import lombok.NonNull;
 import org.ingsw2526_036.bugboard26backend.dtos.UserResponseDto;
 import org.ingsw2526_036.bugboard26backend.entities.User;
 import org.ingsw2526_036.bugboard26backend.mappers.UserMapper;
 import org.ingsw2526_036.bugboard26backend.services.UserService;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,7 +23,7 @@ class UserController {
 
     //Metodo che ritorna una lista di tutti gli utenti nel DB
     @GetMapping("/getusers")
-    public ResponseEntity<List<UserResponseDto>> getAllUsers() {
+    public ResponseEntity<@NonNull List<UserResponseDto>> getAllUsers() {
         List<User> users = userService.findAll();
         List<UserResponseDto> dtousers = users
                 .stream()
