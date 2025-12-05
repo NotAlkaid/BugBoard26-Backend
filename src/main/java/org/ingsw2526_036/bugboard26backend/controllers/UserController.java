@@ -33,13 +33,4 @@ class UserController {
                 .toList();
         return ResponseEntity.ok(dtousers);
     }
-
-    @PostMapping("/createuser")
-    public ResponseEntity<UserResponseDto> createUser(@Validated @RequestBody UserRequestDto userRequestDto) {
-        User user = userMapper.toEntity(userRequestDto);
-        if(!userService.isValid(user)) throw new IllegalArgumentException("Fields empty or null");
-        User saveduser = userService.save(user);
-        return ResponseEntity.status(HttpStatus.CREATED).body(userMapper.toDto(saveduser));
-    }
-
 }
