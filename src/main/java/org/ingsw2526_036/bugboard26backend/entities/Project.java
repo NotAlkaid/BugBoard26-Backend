@@ -1,12 +1,12 @@
 package org.ingsw2526_036.bugboard26backend.entities;
 
-
 import jakarta.persistence.*;
 import lombok.*;
 import java.util.List;
 
 @Entity
-@Data
+@Getter
+@Setter
 @RequiredArgsConstructor
 @NoArgsConstructor
 @Table(name = "Project")
@@ -25,7 +25,22 @@ public class Project {
     @NonNull
     private Administrator creator;
     @ManyToMany(mappedBy = "joinedProjects")
+    @ToString.Exclude // Evita loop infiniti
     private List<User> participants;
-    @OneToMany(mappedBy = "project")
+    @OneToMany(mappedBy = "project")   
+    @ToString.Exclude // Evita loop infiniti
     private List<Issue> issues;
+    
+    
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Project)) return false;
+        return id.equals(((Project) o).getId());
+    }
+    
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
+    }
 }

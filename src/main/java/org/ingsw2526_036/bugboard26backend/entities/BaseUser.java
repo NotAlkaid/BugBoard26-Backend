@@ -8,7 +8,9 @@ import lombok.NoArgsConstructor;
 
 @EqualsAndHashCode(callSuper = true)
 @Entity
-@Data
+@Getter
+@Setter
+@ToString(callSuper = true)
 @NoArgsConstructor //per JPA
 @DiscriminatorValue("BASEUSER")
 public class BaseUser extends User{

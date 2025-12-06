@@ -29,12 +29,12 @@ public class ProjectService {
     @Transactional
     public Project createProject(ProjectRequestDto projectRequestDto) {
         if (projectRepository.existsByName(projectRequestDto.getName())) {
-            throw new IllegalArgumentException("Project name already exists");
+            throw new DuplicateResourceException("Project name already exists");
         }
     
         //solo admin esistenti possono creare progetti
         User creator = userRepository.findById(projectRequestDto.getCreatorId())
-                .orElseThrow(() -> new IllegalArgumentException("UserId not valid"));
+                .orElseThrow(() -> new ResourceNotFoundException("UserId not valid"));
         if (!(creator instanceof Administrator)) {
             throw new IllegalArgumentException("Only administrators can create projects");
         }

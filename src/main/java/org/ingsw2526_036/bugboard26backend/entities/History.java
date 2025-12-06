@@ -11,7 +11,9 @@ import org.ingsw2526_036.bugboard26backend.enums.EditTypeEnum;
 import java.sql.Date;
 
 @Entity
-@Data
+@Getter
+@Setter
+@ToString
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "History")

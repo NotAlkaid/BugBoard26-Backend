@@ -32,20 +32,25 @@ public class UserMapper {
     //Prende un dto e restituisce un utente
     public User toEntity(UserRequestDto userRequestDto) {
         User user;
-        if("ADMIN".equalsIgnoreCase(userRequestDto.getType())){
+        
+        
+        String typeInput = userRequestDto.getType().toUpperCase();
+
+       
+        if (RoleEnum.ADMIN.name().equals(typeInput)) {
             user = new Administrator();
-            user.setEmail(userRequestDto.getEmail());
-            user.setUsername(userRequestDto.getUsername());
-            user.setPassword(Objects.requireNonNull(passwordEncoder.encode(userRequestDto.getPassword())));
-            return user;
-        }
-        else if("BASEUSER".equalsIgnoreCase(userRequestDto.getType())){
+        } 
+        else if (RoleEnum.BASEUSER.name().equals(typeInput)) {
             user = new BaseUser();
-            user.setEmail(userRequestDto.getEmail());
-            user.setUsername(userRequestDto.getUsername());
-            user.setPassword(Objects.requireNonNull(passwordEncoder.encode(userRequestDto.getPassword())));
-            return user;
+        } 
+        else {
+            throw new IllegalArgumentException("Unknown user type: " + typeInput);
         }
-        throw new IllegalArgumentException("Unknown user type");
+
+        user.setEmail(userRequestDto.getEmail());
+        user.setUsername(userRequestDto.getUsername());
+        user.setPassword(passwordEncoder.encode(userRequestDto.getPassword()));
+        return user;
     }
+
 }
