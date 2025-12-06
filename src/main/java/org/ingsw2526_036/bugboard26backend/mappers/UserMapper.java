@@ -6,6 +6,7 @@ import org.ingsw2526_036.bugboard26backend.dtos.UserResponseDto;
 import org.ingsw2526_036.bugboard26backend.entities.Administrator;
 import org.ingsw2526_036.bugboard26backend.entities.BaseUser;
 import org.ingsw2526_036.bugboard26backend.entities.User;
+import org.ingsw2526_036.bugboard26backend.enums.RoleEnum;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
@@ -49,7 +50,7 @@ public class UserMapper {
 
         user.setEmail(userRequestDto.getEmail());
         user.setUsername(userRequestDto.getUsername());
-        user.setPassword(passwordEncoder.encode(userRequestDto.getPassword()));
+        user.setPassword(Objects.requireNonNull(passwordEncoder.encode(userRequestDto.getPassword())));
         return user;
     }
 

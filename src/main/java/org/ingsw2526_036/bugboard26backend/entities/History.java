@@ -2,9 +2,7 @@ package org.ingsw2526_036.bugboard26backend.entities;
 
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.ingsw2526_036.bugboard26backend.enums.EditTypeEnum;
 

@@ -5,6 +5,8 @@ import org.ingsw2526_036.bugboard26backend.dtos.ProjectRequestDto;
 import org.ingsw2526_036.bugboard26backend.entities.Administrator;
 import org.ingsw2526_036.bugboard26backend.entities.Project;
 import org.ingsw2526_036.bugboard26backend.entities.User;
+import org.ingsw2526_036.bugboard26backend.exception.DuplicateResourceException;
+import org.ingsw2526_036.bugboard26backend.exception.ResourceNotFoundException;
 import org.ingsw2526_036.bugboard26backend.mappers.ProjectMapper;
 import org.ingsw2526_036.bugboard26backend.repositories.ProjectRepository;
 import org.ingsw2526_036.bugboard26backend.repositories.UserRepository;

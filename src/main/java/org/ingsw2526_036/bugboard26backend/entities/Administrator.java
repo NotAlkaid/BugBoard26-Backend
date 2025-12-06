@@ -3,9 +3,8 @@ package org.ingsw2526_036.bugboard26backend.entities;
 import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import jakarta.persistence.OneToMany;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
+import lombok.*;
+
 import java.util.List;
 
 @EqualsAndHashCode(callSuper = true)
