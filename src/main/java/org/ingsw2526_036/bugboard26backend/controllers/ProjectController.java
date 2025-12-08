@@ -8,6 +8,7 @@ import org.ingsw2526_036.bugboard26backend.mappers.ProjectMapper;
 import org.ingsw2526_036.bugboard26backend.services.ProjectService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,6 +17,8 @@ import org.springframework.web.bind.annotation.RestController;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
 import java.util.List;
+import org.springframework.security.core.Authentication;
+import org.ingsw2526_036.bugboard26backend.entities.User;
 
 @RestController
 @RequestMapping("/api/projects")
@@ -26,7 +29,9 @@ public class ProjectController {
 
     @PostMapping("/createproject")
     public ResponseEntity<ProjectResponseDto> createProject(@Valid @RequestBody ProjectRequestDto projectRequestDto) {
-        Project createdProject = projectService.createProject(projectRequestDto);
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        User creator = (User) authentication.getPrincipal();
+        Project createdProject = projectService.createProject(projectRequestDto, creator);
         ProjectResponseDto projectResponseDto = projectMapper.toDto(createdProject);
         return ResponseEntity.status(HttpStatus.CREATED).body(projectResponseDto);
     }

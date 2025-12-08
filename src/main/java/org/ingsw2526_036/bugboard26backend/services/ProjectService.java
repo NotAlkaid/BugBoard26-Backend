@@ -25,18 +25,13 @@ import lombok.RequiredArgsConstructor;
 public class ProjectService {
 
     private final ProjectRepository projectRepository;
-    private final UserRepository userRepository;
     private final ProjectMapper projectMapper;
 
     @Transactional
-    public Project createProject(ProjectRequestDto projectRequestDto) {
+    public Project createProject(ProjectRequestDto projectRequestDto, User creator) {
         if (projectRepository.existsByName(projectRequestDto.getName())) {
             throw new DuplicateResourceException("Project name already exists");
-        }
-    
-        //solo admin esistenti possono creare progetti
-        User creator = userRepository.findById(projectRequestDto.getCreatorId())
-                .orElseThrow(() -> new ResourceNotFoundException("UserId not valid"));
+        } 
         if (!(creator instanceof Administrator)) {
             throw new IllegalArgumentException("Only administrators can create projects");
         }
