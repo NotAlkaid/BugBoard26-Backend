@@ -28,6 +28,7 @@ public class SecurityConfiguration {
                         .requestMatchers("/api/v1/auth/authenticate").permitAll()
                         .requestMatchers("/api/v1/auth/createuser").hasRole("ADMIN")
                         .requestMatchers("/api/projects/createproject").hasRole("ADMIN")
+                        .requestMatchers("/api/projects/*/participants").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
                 // Gestione della sessione Stateless

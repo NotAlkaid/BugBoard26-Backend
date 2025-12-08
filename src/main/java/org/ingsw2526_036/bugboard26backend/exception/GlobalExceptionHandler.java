@@ -1,6 +1,7 @@
 package org.ingsw2526_036.bugboard26backend.exception;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import lombok.NonNull;
 import org.springframework.http.HttpStatus;
@@ -11,6 +12,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import java.util.List;
+import java.util.Map;
+import jakarta.validation.ConstraintViolationException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -45,5 +48,15 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(UsernameNotFoundException.class)
     public ResponseEntity<@NonNull String> handleUsernameNotFoundException(UsernameNotFoundException exception) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(exception.getMessage());
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<Map<String, String>> handleConstraintViolation(ConstraintViolationException ex) {
+        Map<String, String> errorResponse = new HashMap<>();
+        
+        errorResponse.put("error", "Validation Error");
+        errorResponse.put("message", ex.getMessage()); 
+
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST); // Ritorna 400
     }
 }
