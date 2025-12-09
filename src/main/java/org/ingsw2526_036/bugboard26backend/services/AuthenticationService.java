@@ -1,11 +1,13 @@
 package org.ingsw2526_036.bugboard26backend.services;
 
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.ingsw2526_036.bugboard26backend.config.JwtService;
 import org.ingsw2526_036.bugboard26backend.dtos.AuthenticationRequestDto;
 import org.ingsw2526_036.bugboard26backend.dtos.AuthenticationResponseDto;
 import org.ingsw2526_036.bugboard26backend.entities.User;
+import org.ingsw2526_036.bugboard26backend.exception.DuplicateResourceException;
 import org.ingsw2526_036.bugboard26backend.repositories.UserRepository;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -19,7 +21,14 @@ public class AuthenticationService {
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
 
+    @Transactional
     public AuthenticationResponseDto createUser(User user) {
+        if(userRepository.existsByEmail(user.getEmail())) {
+            throw new DuplicateResourceException("Email already in use");
+        }
+        if(userRepository.existsByUsername(user.getRealUsername())) {
+            throw new DuplicateResourceException("Username already in use");
+        }
         userRepository.save(user);
         var jwtToken = jwtService.generateToken(user);
         return new AuthenticationResponseDto(jwtToken);

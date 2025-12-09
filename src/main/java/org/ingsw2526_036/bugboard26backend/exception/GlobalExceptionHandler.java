@@ -51,7 +51,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
-    public ResponseEntity<Map<String, String>> handleConstraintViolation(ConstraintViolationException ex) {
+    public ResponseEntity<@NonNull Map<String, String>> handleConstraintViolation(ConstraintViolationException ex) {
         Map<String, String> errorResponse = new HashMap<>();
         
         errorResponse.put("error", "Validation Error");

@@ -16,10 +16,6 @@ public class UserService {
         return userRepository.findAll();
     }
 
-    public User save(User user) {
-        return userRepository.save(user);
-    }
-
     
 
 
