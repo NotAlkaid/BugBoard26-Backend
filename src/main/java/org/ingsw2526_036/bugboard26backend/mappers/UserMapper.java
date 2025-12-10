@@ -24,7 +24,7 @@ public class UserMapper {
         if(user instanceof Administrator) type = "ADMIN";
         return new UserResponseDto(
                 user.getId(),
-                user.getUsername(),
+                user.getRealUsername(),
                 user.getEmail(),
                 type
         );

@@ -63,6 +63,7 @@ public abstract class User implements UserDetails {
     public @NonNull String getUsername(){
         return this.email;
     }
+
     public @NonNull String getRealUsername() {return this.username;}
 
     @Override

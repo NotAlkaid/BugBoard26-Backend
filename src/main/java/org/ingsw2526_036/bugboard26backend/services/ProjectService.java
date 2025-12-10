@@ -1,9 +1,6 @@
 package org.ingsw2526_036.bugboard26backend.services;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import org.ingsw2526_036.bugboard26backend.dtos.ProjectRequestDto;
 import org.ingsw2526_036.bugboard26backend.entities.Administrator;
@@ -33,22 +30,19 @@ public class ProjectService {
     private final UserRepository userRepository;
 
     @Transactional
-    public Project createProject(ProjectRequestDto projectRequestDto, User creator) {
+    public Project createProject(ProjectRequestDto projectRequestDto, Administrator creator) {
         if (projectRepository.existsByName(projectRequestDto.getName())) {
             throw new DuplicateResourceException("Project name already exists");
         }
-        if (!(creator instanceof Administrator)) {
-            throw new IllegalArgumentException("Only administrators can create projects");
-        }
         Project project = projectMapper.toEntity(projectRequestDto);
-        project.setCreator((Administrator) creator);
-
+        project.setCreator(creator);
+        Project createdProject = projectRepository.save(project);
+        addParticipants(createdProject.getId(), Collections.singletonList(creator.getId()), creator);
         return projectRepository.save(project);
     }
 
     /**
      * Add multiple users as participants to a project.
-     *
      * Purpose: Given a project id and a list of user ids, attach those users as participants
      *          to the project if they exist and are not already members. Only the administrator
      *          who created the project is allowed to perform this operation.
@@ -103,6 +97,7 @@ public class ProjectService {
                 // Modifico anche il lato Inverse (Project) per coerenza in memoria
                 project.getParticipants().add(user);
             }
+            System.out.println("Username: " +  user.getUsername());
         }
 
         return projectRepository.save(project);

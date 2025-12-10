@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.ingsw2526_036.bugboard26backend.dtos.ProjectRequestDto;
 import org.ingsw2526_036.bugboard26backend.dtos.ProjectResponseDto;
+import org.ingsw2526_036.bugboard26backend.entities.Administrator;
 import org.ingsw2526_036.bugboard26backend.entities.Project;
 import org.ingsw2526_036.bugboard26backend.entities.User;
 import org.ingsw2526_036.bugboard26backend.mappers.ProjectMapper;
@@ -36,8 +37,8 @@ public class ProjectController {
     private final UserMapper userMapper;
 
     @PostMapping("/createproject")
-    public ResponseEntity<ProjectResponseDto> createProject(@Valid @RequestBody ProjectRequestDto projectRequestDto,
-                                                            @AuthenticationPrincipal User creator) {
+    public ResponseEntity<@NonNull ProjectResponseDto> createProject(@Valid @RequestBody ProjectRequestDto projectRequestDto,
+                                                            @AuthenticationPrincipal Administrator creator) {
         Project createdProject = projectService.createProject(projectRequestDto, creator);
         ProjectResponseDto projectResponseDto = projectMapper.toDto(createdProject);
         return ResponseEntity.status(HttpStatus.CREATED).body(projectResponseDto);
@@ -45,7 +46,7 @@ public class ProjectController {
 
     //Endpoint: GET /api/projects/getprojects
     @GetMapping("/getprojects")
-    public ResponseEntity<List<ProjectResponseDto>> getProjects() {
+    public ResponseEntity<@NonNull List<ProjectResponseDto>> getProjects() {
         List<Project> projects = projectService.findAll();
         List<ProjectResponseDto> dtoProjects = projects
                 .stream()
@@ -56,16 +57,14 @@ public class ProjectController {
     
     /**
      * Add multiple users to a project.
-     *
      * Purpose: Allow the administrator who created the project to add multiple users as participants.
      * Pattern: retrieves the authenticated requester from the security context
      *          and delegates authorization and business logic to the service layer.
-     *
      * Endpoint: POST /api/projects/{projectId}/participants
      * Body: JSON array of user ids, e.g. [1,2,3]
      */
     @PostMapping("/{projectId}/participants")
-    public ResponseEntity<ProjectResponseDto> addParticipants(@PathVariable Long projectId,
+    public ResponseEntity<@NonNull ProjectResponseDto> addParticipants(@PathVariable Long projectId,
                                                               @NotEmpty(message = "UserIds list cannot be empty") @RequestBody List<Long> userIds,
                                                               @AuthenticationPrincipal User requester) {
         Project updatedProject = projectService.addParticipants(projectId, userIds, requester);

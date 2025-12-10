@@ -2,6 +2,8 @@ package org.ingsw2526_036.bugboard26backend.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -26,7 +28,7 @@ public class Project {
     private Administrator creator;
     @ManyToMany(mappedBy = "joinedProjects")
     @ToString.Exclude // Evita loop infiniti
-    private List<User> participants;
+    private List<User> participants = new ArrayList<>();
     @OneToMany(mappedBy = "project")   
     @ToString.Exclude // Evita loop infiniti
     private List<Issue> issues;

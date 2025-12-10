@@ -17,6 +17,6 @@ public interface ProjectMapper {
     Project toEntity(ProjectRequestDto dto);
 
     @Mapping(target = "creatorId", source = "creator.id") 
-    @Mapping(target = "creatorUsername", source = "creator.username")
+    @Mapping(target = "creatorUsername", source = "creator.realUsername")
     ProjectResponseDto toDto(Project project);
 }
