@@ -1,13 +1,26 @@
 package org.ingsw2526_036.bugboard26backend.entities;
 
-import jakarta.persistence.*;
-import lombok.*;
+import java.sql.Date;
+
 import org.hibernate.annotations.CreationTimestamp;
 import org.ingsw2526_036.bugboard26backend.enums.PriorityEnum;
 import org.ingsw2526_036.bugboard26backend.enums.StateEnum;
 import org.ingsw2526_036.bugboard26backend.enums.TypeEnum;
-import java.sql.Blob;
-import java.sql.Date;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 
 @Entity
@@ -31,9 +44,9 @@ public class Issue {
     @Column(nullable = false, updatable = false)
     @CreationTimestamp
     @NonNull
-    private Date created;
-    @Lob
-    private Blob image;
+    private Date creationDate;
+    @Column(nullable = true)
+    private byte[] image;
     @Column(nullable = false)
     @NonNull
     private PriorityEnum priority;
@@ -48,7 +61,7 @@ public class Issue {
     @NonNull
     private User creator;
     @ManyToOne
-    @JoinColumn(name = "assignee_id")
+    @JoinColumn(name = "assigned_to_id")
     private User assignedTo;
     @ManyToOne
     @JoinColumn(name ="project_id", nullable = false)
