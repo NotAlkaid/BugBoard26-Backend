@@ -24,8 +24,8 @@ import org.ingsw2526_036.bugboard26backend.mappers.UserMapper;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.validation.annotation.Validated;
-import jakarta.validation.constraints.NotEmpty;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import jakarta.validation.constraints.NotNull;
 
 @RestController
 @RequestMapping("/api/projects")
@@ -56,18 +56,18 @@ public class ProjectController {
     }
     
     /**
-     * Add multiple users to a project.
-     * Purpose: Allow the administrator who created the project to add multiple users as participants.
-     * Pattern: retrieves the authenticated requester from the security context
-     *          and delegates authorization and business logic to the service layer.
-     * Endpoint: POST /api/projects/{projectId}/participants
-     * Body: JSON array of user ids, e.g. [1,2,3]
-     */
+    * Add a user to a project.
+    * Purpose: Allow the administrator who created the project to add user as participant.
+    * Pattern: retrieves the authenticated requester from the security context
+    *          and delegates authorization and business logic to the service layer.
+    * Endpoint: POST /api/projects/{projectId}/participants
+    * Body: JSON user id, e.g. 1
+    */
     @PostMapping("/{projectId}/participants")
-    public ResponseEntity<@NonNull ProjectResponseDto> addParticipants(@PathVariable Long projectId,
-                                                              @NotEmpty(message = "UserIds list cannot be empty") @RequestBody List<Long> userIds,
-                                                              @AuthenticationPrincipal User requester) {
-        Project updatedProject = projectService.addParticipants(projectId, userIds, requester);
+    public ResponseEntity<@NonNull ProjectResponseDto> addParticipant(@PathVariable Long projectId,
+                                                                @NotNull @RequestBody Long userId,
+                                                                @AuthenticationPrincipal User requester) {
+        Project updatedProject = projectService.addParticipant(projectId, userId, requester);
         ProjectResponseDto projectResponseDto = projectMapper.toDto(updatedProject);
         return ResponseEntity.ok(projectResponseDto);
     }
