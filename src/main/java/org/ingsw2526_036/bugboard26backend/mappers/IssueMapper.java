@@ -5,6 +5,7 @@ import org.ingsw2526_036.bugboard26backend.dtos.IssueResponseDto;
 import org.ingsw2526_036.bugboard26backend.entities.Issue;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
 
 @Mapper(componentModel = "spring")
 public interface IssueMapper {
@@ -24,5 +25,18 @@ public interface IssueMapper {
 
     @Mapping(target = "creatorId", source = "creator.id")
     IssueResponseDto toDto(Issue issue);
+
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "creationDate", ignore = true)
+    @Mapping(target = "state", ignore = true)      
+    @Mapping(target = "creator", ignore = true)     
+    @Mapping(target = "project", ignore = true)     
+    @Mapping(target = "assignedTo", ignore = true)  
+    @Mapping(target = "title", source = "title")
+    @Mapping(target = "description", source = "description")
+    @Mapping(target = "image", source = "image")
+    @Mapping(target = "priority", source = "priority")
+    @Mapping(target = "type", source = "type")
+    void updateIssueFromDto(IssueRequestDto dto, @MappingTarget Issue entity);
 
 }

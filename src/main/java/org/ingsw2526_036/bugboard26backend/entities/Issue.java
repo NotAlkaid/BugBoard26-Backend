@@ -6,6 +6,8 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.ingsw2526_036.bugboard26backend.enums.PriorityEnum;
 import org.ingsw2526_036.bugboard26backend.enums.StateEnum;
 import org.ingsw2526_036.bugboard26backend.enums.TypeEnum;
+import org.ingsw2526_036.bugboard26backend.states.IssueState;
+import org.ingsw2526_036.bugboard26backend.states.IssueStateFactory;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -67,4 +69,16 @@ public class Issue {
     @JoinColumn(name ="project_id", nullable = false)
     @NonNull
     private Project project;
+
+    // Pattern STATE: Metodi di Business Logic
+    public void promote() {
+        IssueState currentStateObj = IssueStateFactory.getState(this.state);
+        currentStateObj.next(this);
+    }
+
+    public void demote() {
+        IssueState currentStateObj = IssueStateFactory.getState(this.state);
+        currentStateObj.previous(this);
+    }
+    
 }
