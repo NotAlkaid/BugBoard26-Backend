@@ -1,10 +1,7 @@
 package org.ingsw2526_036.bugboard26backend.dtos;
-import org.ingsw2526_036.bugboard26backend.enums.PriorityEnum;
-import org.ingsw2526_036.bugboard26backend.enums.TypeEnum;
 import jakarta.validation.constraints.Pattern;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data

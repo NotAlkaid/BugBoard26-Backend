@@ -20,6 +20,7 @@ public interface IssueMapper {
     @Mapping(target = "creator", ignore = true) //ignoro creator perchè dal frontend mi arriva solo l'id e poi lo setto nel service
     @Mapping(target = "assignedTo", ignore = true) //ignoro assignee perchè dal frontend mi arriva solo l'id e poi lo setto nel service
     @Mapping(target = "project", ignore = true) //ignoro project perchè dal frontend mi arriva solo l'id e poi lo setto nel service
+    @Mapping(target = "comments", ignore = true)
     @Mapping(target = "type", source = "type")
     Issue toEntity(IssueRequestDto dto);
 
@@ -32,6 +33,7 @@ public interface IssueMapper {
     @Mapping(target = "creator", ignore = true)     
     @Mapping(target = "project", ignore = true)     
     @Mapping(target = "assignedTo", ignore = true)  
+    @Mapping(target = "comments", ignore = true)
     @Mapping(target = "title", source = "title")
     @Mapping(target = "description", source = "description")
     @Mapping(target = "image", source = "image")

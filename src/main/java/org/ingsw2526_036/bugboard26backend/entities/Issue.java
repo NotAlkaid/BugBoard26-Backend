@@ -1,6 +1,7 @@
 package org.ingsw2526_036.bugboard26backend.entities;
 
 import java.sql.Date;
+import java.util.List;
 
 import org.hibernate.annotations.CreationTimestamp;
 import org.ingsw2526_036.bugboard26backend.enums.PriorityEnum;
@@ -16,6 +17,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -69,6 +71,9 @@ public class Issue {
     @JoinColumn(name ="project_id", nullable = false)
     @NonNull
     private Project project;
+    @OneToMany(mappedBy = "issue")
+    @ToString.Exclude
+    private List<Comment> comments;
 
     // Pattern STATE: Metodi di Business Logic
     public void promote() {

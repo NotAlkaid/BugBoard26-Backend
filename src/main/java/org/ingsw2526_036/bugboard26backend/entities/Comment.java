@@ -26,4 +26,8 @@ public class Comment {
     @JoinColumn(name = "creator_id", nullable = false)
     @NonNull
     private User creator;
+    @ManyToOne
+    @JoinColumn(name = "issue_id", nullable = false)
+    @NonNull
+    private Issue issue;
 }
