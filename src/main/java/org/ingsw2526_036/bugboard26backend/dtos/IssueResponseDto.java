@@ -1,5 +1,7 @@
 package org.ingsw2526_036.bugboard26backend.dtos;
+
 import java.sql.Date;
+import java.util.Set;
 import org.ingsw2526_036.bugboard26backend.enums.PriorityEnum;
 import org.ingsw2526_036.bugboard26backend.enums.StateEnum;
 import org.ingsw2526_036.bugboard26backend.enums.TypeEnum;
@@ -17,5 +19,5 @@ public class IssueResponseDto {
     private StateEnum state;
     private TypeEnum type;
     private Long creatorId;
-
+    private Set<LabelResponseDto> labels;
 }

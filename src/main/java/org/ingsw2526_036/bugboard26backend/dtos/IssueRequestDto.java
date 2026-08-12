@@ -1,7 +1,9 @@
 package org.ingsw2526_036.bugboard26backend.dtos;
-import jakarta.validation.constraints.Pattern;
+
+import java.util.Set;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 
 @Data
@@ -16,7 +18,5 @@ public class IssueRequestDto {
     private String priority;
     @Pattern(regexp = "BUG|FEATURE|QUESTION|DOCUMENTATION", message = "Type must be BUG, FEATURE, QUESTION, or DOCUMENTATION")
     private String type;
-
-
-
+    private Set<Long> labelIds;
 }

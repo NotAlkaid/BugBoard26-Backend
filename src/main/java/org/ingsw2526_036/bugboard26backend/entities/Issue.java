@@ -1,7 +1,9 @@
 package org.ingsw2526_036.bugboard26backend.entities;
 
 import java.sql.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.hibernate.annotations.CreationTimestamp;
 import org.ingsw2526_036.bugboard26backend.enums.PriorityEnum;
@@ -12,10 +14,14 @@ import org.ingsw2526_036.bugboard26backend.states.IssueStateFactory;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
@@ -52,12 +58,15 @@ public class Issue {
     @Column(nullable = true)
     private byte[] image;
     @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
     @NonNull
     private PriorityEnum priority;
     @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
     @NonNull
     private StateEnum state;
     @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
     @NonNull
     private TypeEnum type;
     @ManyToOne
@@ -74,6 +83,14 @@ public class Issue {
     @OneToMany(mappedBy = "issue")
     @ToString.Exclude
     private List<Comment> comments;
+    @ManyToMany
+    @JoinTable(
+            name = "issue_label",
+            joinColumns = @JoinColumn(name = "issue_id"),
+            inverseJoinColumns = @JoinColumn(name = "label_id")
+    )
+    @ToString.Exclude
+    private Set<Label> labels = new HashSet<>();
 
     // Pattern STATE: Metodi di Business Logic
     public void promote() {
@@ -85,5 +102,5 @@ public class Issue {
         IssueState currentStateObj = IssueStateFactory.getState(this.state);
         currentStateObj.previous(this);
     }
-    
+
 }

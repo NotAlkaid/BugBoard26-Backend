@@ -1,5 +1,7 @@
 package org.ingsw2526_036.bugboard26backend.controllers;
+
 import java.util.List;
+import java.util.Set;
 
 import org.ingsw2526_036.bugboard26backend.dtos.IssueRequestDto;
 import org.ingsw2526_036.bugboard26backend.dtos.IssueResponseDto;
@@ -7,10 +9,12 @@ import org.ingsw2526_036.bugboard26backend.entities.Issue;
 import org.ingsw2526_036.bugboard26backend.entities.User;
 import org.ingsw2526_036.bugboard26backend.mappers.IssueMapper;
 import org.ingsw2526_036.bugboard26backend.services.IssueService;
+import org.ingsw2526_036.bugboard26backend.services.LabelService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -33,13 +37,14 @@ import lombok.NonNull;
 public class IssueController {
 
     private final IssueService issueService;
+    private final LabelService labelService;
     private final IssueMapper issueMapper;
 
     //Endpoint: POST /api/projects/{projectId}/issues/createissue
     @PostMapping("/createissue")
     public ResponseEntity<@NonNull IssueResponseDto> createIssue(@PathVariable Long projectId,
                                                                  @Valid @RequestBody IssueRequestDto issueRequestDto,
-                                                                 @AuthenticationPrincipal User creator) {                                                            
+                                                                 @AuthenticationPrincipal User creator) {
         Issue createdIssue = issueService.createIssue(projectId, issueRequestDto, creator);
         return ResponseEntity.status(HttpStatus.CREATED).body(issueMapper.toDto(createdIssue));
 
@@ -48,15 +53,15 @@ public class IssueController {
     @GetMapping("/getissues")
     public ResponseEntity<@NonNull List<IssueResponseDto>> getIssues() {
         List<Issue> issues = issueService.findAll();
-            List<IssueResponseDto> dtoIssues = issues
-                    .stream()
-                    .map(issueMapper::toDto)
-                    .toList();
-            return ResponseEntity.ok(dtoIssues);
+        List<IssueResponseDto> dtoIssues = issues
+                .stream()
+                .map(issueMapper::toDto)
+                .toList();
+        return ResponseEntity.ok(dtoIssues);
     }
 
     //Endpoint PUT /api/projects/{projectId}/issues/{issueId}.
-    @PutMapping("/{issueId}") 
+    @PutMapping("/{issueId}")
     public ResponseEntity<IssueResponseDto> updateIssue(@PathVariable Long issueId,
                                                         @Valid @RequestBody IssueRequestDto dto,
                                                         @AuthenticationPrincipal User requester) {
@@ -88,8 +93,31 @@ public class IssueController {
                                                         @PathVariable Long userId,
                                                         @AuthenticationPrincipal User requester) {
         Issue updatedIssue = issueService.assignIssue(issueId, userId, requester);
-        return ResponseEntity.ok(issueMapper.toDto(updatedIssue)); 
+        return ResponseEntity.ok(issueMapper.toDto(updatedIssue));
     }
 
+    @PostMapping("/{issueId}/labels/{labelId}")
+    public ResponseEntity<IssueResponseDto> addLabelToIssue(@PathVariable Long issueId,
+                                                            @PathVariable Long labelId,
+                                                            @AuthenticationPrincipal User requester) {
+        Issue updatedIssue = labelService.addLabelToIssue(issueId, labelId, requester);
+        return ResponseEntity.ok(issueMapper.toDto(updatedIssue));
+    }
+
+    @DeleteMapping("/{issueId}/labels/{labelId}")
+    public ResponseEntity<IssueResponseDto> removeLabelFromIssue(@PathVariable Long issueId,
+                                                                 @PathVariable Long labelId,
+                                                                 @AuthenticationPrincipal User requester) {
+        Issue updatedIssue = labelService.removeLabelFromIssue(issueId, labelId, requester);
+        return ResponseEntity.ok(issueMapper.toDto(updatedIssue));
+    }
+
+    @PutMapping("/{issueId}/labels")
+    public ResponseEntity<IssueResponseDto> setIssueLabels(@PathVariable Long issueId,
+                                                           @RequestBody Set<Long> labelIds,
+                                                           @AuthenticationPrincipal User requester) {
+        Issue updatedIssue = labelService.setIssueLabels(issueId, labelIds, requester);
+        return ResponseEntity.ok(issueMapper.toDto(updatedIssue));
+    }
 }
 

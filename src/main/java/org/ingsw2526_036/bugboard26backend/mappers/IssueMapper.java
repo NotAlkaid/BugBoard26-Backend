@@ -7,7 +7,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", uses = {LabelMapper.class})
 public interface IssueMapper {
 
     @Mapping(target = "id", ignore = true) //ignoro id perchè è generato automaticamente
@@ -21,6 +21,7 @@ public interface IssueMapper {
     @Mapping(target = "assignedTo", ignore = true) //ignoro assignee perchè dal frontend mi arriva solo l'id e poi lo setto nel service
     @Mapping(target = "project", ignore = true) //ignoro project perchè dal frontend mi arriva solo l'id e poi lo setto nel service
     @Mapping(target = "comments", ignore = true)
+    @Mapping(target = "labels", ignore = true)
     @Mapping(target = "type", source = "type")
     Issue toEntity(IssueRequestDto dto);
 
@@ -29,11 +30,12 @@ public interface IssueMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "creationDate", ignore = true)
-    @Mapping(target = "state", ignore = true)      
-    @Mapping(target = "creator", ignore = true)     
-    @Mapping(target = "project", ignore = true)     
-    @Mapping(target = "assignedTo", ignore = true)  
+    @Mapping(target = "state", ignore = true)
+    @Mapping(target = "creator", ignore = true)
+    @Mapping(target = "project", ignore = true)
+    @Mapping(target = "assignedTo", ignore = true)
     @Mapping(target = "comments", ignore = true)
+    @Mapping(target = "labels", ignore = true)
     @Mapping(target = "title", source = "title")
     @Mapping(target = "description", source = "description")
     @Mapping(target = "image", source = "image")
