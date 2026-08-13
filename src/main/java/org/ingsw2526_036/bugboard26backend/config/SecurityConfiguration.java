@@ -2,6 +2,7 @@ package org.ingsw2526_036.bugboard26backend.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -29,6 +30,8 @@ public class SecurityConfiguration {
                         .requestMatchers("/api/v1/auth/createuser").hasRole("ADMIN")
                         .requestMatchers("/api/projects/createproject").hasRole("ADMIN")
                         .requestMatchers("/api/projects/*/participants").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/labels/").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/labels/").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
                 // Gestione della sessione Stateless

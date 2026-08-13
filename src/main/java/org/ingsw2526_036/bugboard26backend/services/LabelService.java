@@ -1,10 +1,12 @@
 package org.ingsw2526_036.bugboard26backend.services;
 
+import java.nio.file.AccessDeniedException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import org.ingsw2526_036.bugboard26backend.dtos.LabelRequestDto;
+import org.ingsw2526_036.bugboard26backend.entities.Administrator;
 import org.ingsw2526_036.bugboard26backend.entities.Issue;
 import org.ingsw2526_036.bugboard26backend.entities.Label;
 import org.ingsw2526_036.bugboard26backend.entities.User;
@@ -45,7 +47,10 @@ public class LabelService {
     }
 
     @Transactional
-    public Label updateLabel(Long id, LabelRequestDto dto) {
+    public Label updateLabel(Long id, LabelRequestDto dto, User requester) throws AccessDeniedException {
+        if (!(requester instanceof Administrator)) {
+            throw new AccessDeniedException("Only Administrators can modify labels.");
+        }
         Label label = getLabelById(id);
         if (dto.getName() != null && !dto.getName().equals(label.getName())) {
             if (labelRepository.existsByName(dto.getName())) {
@@ -60,7 +65,10 @@ public class LabelService {
     }
 
     @Transactional
-    public void deleteLabel(Long id) {
+    public void deleteLabel(Long id, User requester) throws AccessDeniedException {
+        if (!(requester instanceof Administrator)) {
+            throw new AccessDeniedException("Only Administrators can delete labels.");
+        }
         Label label = getLabelById(id);
         for (Issue issue : label.getIssues()) {
             issue.getLabels().remove(label);

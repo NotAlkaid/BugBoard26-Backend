@@ -1,14 +1,17 @@
 package org.ingsw2526_036.bugboard26backend.controllers;
 
+import java.nio.file.AccessDeniedException;
 import java.util.List;
 
 import org.ingsw2526_036.bugboard26backend.dtos.LabelRequestDto;
 import org.ingsw2526_036.bugboard26backend.dtos.LabelResponseDto;
 import org.ingsw2526_036.bugboard26backend.entities.Label;
+import org.ingsw2526_036.bugboard26backend.entities.User;
 import org.ingsw2526_036.bugboard26backend.mappers.LabelMapper;
 import org.ingsw2526_036.bugboard26backend.services.LabelService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -53,14 +56,16 @@ public class LabelController {
 
     @PutMapping("/{id}")
     public ResponseEntity<@NonNull LabelResponseDto> updateLabel(@PathVariable Long id,
-                                                                 @Valid @RequestBody LabelRequestDto dto) {
-        Label updatedLabel = labelService.updateLabel(id, dto);
+                                                                 @Valid @RequestBody LabelRequestDto dto,
+                                                                 @AuthenticationPrincipal User requester) throws AccessDeniedException {
+        Label updatedLabel = labelService.updateLabel(id, dto, requester);
         return ResponseEntity.ok(labelMapper.toDto(updatedLabel));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteLabel(@PathVariable Long id) {
-        labelService.deleteLabel(id);
+    public ResponseEntity<Void> deleteLabel(@PathVariable Long id,
+                                            @AuthenticationPrincipal User requester) throws AccessDeniedException {
+        labelService.deleteLabel(id, requester);
         return ResponseEntity.noContent().build();
     }
 }
