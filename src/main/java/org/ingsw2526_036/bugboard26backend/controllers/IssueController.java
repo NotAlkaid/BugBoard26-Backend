@@ -7,6 +7,9 @@ import org.ingsw2526_036.bugboard26backend.dtos.IssueRequestDto;
 import org.ingsw2526_036.bugboard26backend.dtos.IssueResponseDto;
 import org.ingsw2526_036.bugboard26backend.entities.Issue;
 import org.ingsw2526_036.bugboard26backend.entities.User;
+import org.ingsw2526_036.bugboard26backend.enums.PriorityEnum;
+import org.ingsw2526_036.bugboard26backend.enums.StateEnum;
+import org.ingsw2526_036.bugboard26backend.enums.TypeEnum;
 import org.ingsw2526_036.bugboard26backend.mappers.IssueMapper;
 import org.ingsw2526_036.bugboard26backend.services.IssueService;
 import org.ingsw2526_036.bugboard26backend.services.LabelService;
@@ -22,13 +25,12 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
-
-
 
 @RestController
 @RequestMapping("/api/projects/{projectId}/issues")
@@ -47,12 +49,20 @@ public class IssueController {
                                                                  @AuthenticationPrincipal User creator) {
         Issue createdIssue = issueService.createIssue(projectId, issueRequestDto, creator);
         return ResponseEntity.status(HttpStatus.CREATED).body(issueMapper.toDto(createdIssue));
-
     }
-    //Endpoint: GET /api/projects/{projectId}/issues/getissues.
-    @GetMapping("/getissues")
-    public ResponseEntity<@NonNull List<IssueResponseDto>> getIssues() {
-        List<Issue> issues = issueService.findAll();
+
+    // Endpoint: GET /api/projects/{projectId}/issues e /getissues
+    @GetMapping({"", "/getissues"})
+    public ResponseEntity<@NonNull List<IssueResponseDto>> getIssues(
+            @PathVariable Long projectId,
+            @RequestParam(required = false) TypeEnum type,
+            @RequestParam(required = false) StateEnum state,
+            @RequestParam(required = false) PriorityEnum priority,
+            @RequestParam(required = false) Long assignedToId,
+            @RequestParam(required = false) Long labelId,
+            @RequestParam(defaultValue = "creationDate") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
+        List<Issue> issues = issueService.getIssues(projectId, type, state, priority, assignedToId, labelId, sortBy, sortDir);
         List<IssueResponseDto> dtoIssues = issues
                 .stream()
                 .map(issueMapper::toDto)
@@ -120,4 +130,3 @@ public class IssueController {
         return ResponseEntity.ok(issueMapper.toDto(updatedIssue));
     }
 }
-

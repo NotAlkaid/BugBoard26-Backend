@@ -1,4 +1,5 @@
 package org.ingsw2526_036.bugboard26backend.services;
+
 import org.springframework.stereotype.Service;
 import org.ingsw2526_036.bugboard26backend.repositories.IssueRepository;
 import org.ingsw2526_036.bugboard26backend.repositories.ProjectRepository;
@@ -9,19 +10,30 @@ import org.ingsw2526_036.bugboard26backend.entities.Administrator;
 import org.ingsw2526_036.bugboard26backend.entities.Issue;
 import org.ingsw2526_036.bugboard26backend.entities.Project;
 import org.ingsw2526_036.bugboard26backend.entities.User;
+import org.ingsw2526_036.bugboard26backend.enums.PriorityEnum;
 import org.ingsw2526_036.bugboard26backend.enums.StateEnum;
+import org.ingsw2526_036.bugboard26backend.enums.TypeEnum;
 import org.ingsw2526_036.bugboard26backend.exception.ResourceNotFoundException;
-import org.springframework.security.access.AccessDeniedException;
-import jakarta.transaction.Transactional;
-import java.util.HashSet;
-import java.util.List;
-import org.ingsw2526_036.bugboard26backend.entities.Label;
 import org.ingsw2526_036.bugboard26backend.repositories.LabelRepository;
 import org.ingsw2526_036.bugboard26backend.repositories.UserRepository;
+import org.ingsw2526_036.bugboard26backend.specifications.IssueSpecification;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.access.AccessDeniedException;
+import jakarta.transaction.Transactional;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import org.ingsw2526_036.bugboard26backend.entities.Label;
 
 @Service
 @RequiredArgsConstructor
 public class IssueService {
+    private static final Set<String> ALLOWED_SORT_PROPERTIES = Set.of(
+            "id", "title", "description", "creationDate", "priority", "state", "type"
+    );
+
     private final IssueRepository issueRepository;
     private final ProjectRepository projectRepository;
     private final IssueMapper issueMapper;
@@ -148,7 +160,7 @@ public class IssueService {
         if (!(requester instanceof Administrator)) {
             throw new AccessDeniedException("Only Administrators can assign issues.");
         }
-        // Recupera l'utente da assegnare (puoi aggiungere UserRepository se necessario)
+        // Recupera l'utente da assegnare
         User assignee = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User to assign not found with id: " + userId));
 
@@ -167,8 +179,30 @@ public class IssueService {
         }
         return issueRepository.save(issue);
     }
+
     public List<Issue> findAll() {
         return issueRepository.findAll();
     }
 
+    public List<Issue> getIssues(Long projectId,
+                                 TypeEnum type,
+                                 StateEnum state,
+                                 PriorityEnum priority,
+                                 Long assignedToId,
+                                 Long labelId,
+                                 String sortBy,
+                                 String sortDir) {
+        if (!projectRepository.existsById(projectId)) {
+            throw new ResourceNotFoundException("Project not found with id: " + projectId);
+        }
+
+        Specification<Issue> spec = IssueSpecification.withFilters(projectId, type, state, priority, assignedToId, labelId);
+
+        Sort.Direction direction = "asc".equalsIgnoreCase(sortDir) ? Sort.Direction.ASC : Sort.Direction.DESC;
+        String property = (sortBy != null && ALLOWED_SORT_PROPERTIES.contains(sortBy)) ? sortBy : "creationDate";
+
+        Sort sort = Sort.by(direction, property);
+
+        return issueRepository.findAll(spec, sort);
+    }
 }
