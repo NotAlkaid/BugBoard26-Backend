@@ -1,7 +1,6 @@
 package org.ingsw2526_036.bugboard26backend.services;
 
 import java.util.*;
-import java.util.stream.Collectors;
 import org.ingsw2526_036.bugboard26backend.dtos.ProjectRequestDto;
 import org.ingsw2526_036.bugboard26backend.entities.Administrator;
 import org.ingsw2526_036.bugboard26backend.entities.Project;

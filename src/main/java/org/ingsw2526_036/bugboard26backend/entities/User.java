@@ -3,9 +3,6 @@ package org.ingsw2526_036.bugboard26backend.entities;
 import jakarta.persistence.*;
 import lombok.*;
 import java.util.List;
-
-import jakarta.persistence.*;
-import lombok.*;
 import org.ingsw2526_036.bugboard26backend.enums.RoleEnum;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
