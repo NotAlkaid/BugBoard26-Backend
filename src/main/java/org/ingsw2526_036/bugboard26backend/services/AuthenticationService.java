@@ -14,12 +14,23 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @Service
 @RequiredArgsConstructor
 public class AuthenticationService {
     private final UserRepository userRepository;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
+
+    private Map<String, Object> getCustomClaims(User user) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("role", user.getRole().name());
+        claims.put("userId", user.getId());
+        claims.put("username", user.getRealUsername());
+        return claims;
+    }
 
     @Transactional
     public AuthenticationResponseDto createUser(User user) {
@@ -30,7 +41,7 @@ public class AuthenticationService {
             throw new DuplicateResourceException("Username already in use");
         }
         userRepository.save(user);
-        var jwtToken = jwtService.generateToken(user);
+        var jwtToken = jwtService.generateToken(getCustomClaims(user), user);
         return new AuthenticationResponseDto(jwtToken);
     }
 
@@ -43,7 +54,7 @@ public class AuthenticationService {
         );
         User saveduser = userRepository.findByEmail(user.getEmail()).
                 orElseThrow(() -> new UsernameNotFoundException("User not found"));
-        var jwtToken = jwtService.generateToken(saveduser);
+        var jwtToken = jwtService.generateToken(getCustomClaims(saveduser), saveduser);
         return new AuthenticationResponseDto(jwtToken);
     }
 }

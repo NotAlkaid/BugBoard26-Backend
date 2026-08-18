@@ -17,16 +17,13 @@ import java.util.Objects;
 public class UserMapper {
     private final PasswordEncoder passwordEncoder;
 
-    //Prende un utente e restituisce un dto
     public UserResponseDto toDto(User user) {
-        String type = "BASEUSER";
         if (user == null) return null;
-        if(user instanceof Administrator) type = "ADMIN";
         return new UserResponseDto(
                 user.getId(),
                 user.getRealUsername(),
                 user.getEmail(),
-                type
+                user.getRole().name()
         );
     }
 

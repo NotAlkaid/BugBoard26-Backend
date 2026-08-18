@@ -50,18 +50,25 @@ public abstract class User implements UserDetails {
     @ToString.Exclude // Evita loop infiniti
     private List<Comment> comments;
 
-    @Override
-    public @NonNull Collection<? extends GrantedAuthority> getAuthorities() {
-        RoleEnum role = (this instanceof Administrator) ? RoleEnum.ADMIN : RoleEnum.BASEUSER;
-        return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
+    public RoleEnum getRole() {
+        return (this instanceof Administrator) ? RoleEnum.ADMIN : RoleEnum.BASEUSER;
     }
 
     @Override
-    public @NonNull String getUsername(){
+    public @NonNull Collection<? extends GrantedAuthority> getAuthorities() {
+        return List.of(new SimpleGrantedAuthority("ROLE_" + getRole().name()));
+    }
+
+    // Metodo richiesto da Spring Security (UserDetails): restituisce l'email perché usata come identificativo di login
+    @Override
+    public @NonNull String getUsername() {
         return this.email;
     }
 
-    public @NonNull String getRealUsername() {return this.username;}
+    // Restituisce il nickname/username reale dell'utente (colonna 'username' a database)
+    public @NonNull String getRealUsername() {
+        return this.username;
+    }
 
     @Override
     public boolean isAccountNonExpired() {
