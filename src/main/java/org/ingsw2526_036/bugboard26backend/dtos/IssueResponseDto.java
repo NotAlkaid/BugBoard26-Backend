@@ -19,5 +19,10 @@ public class IssueResponseDto {
     private StateEnum state;
     private TypeEnum type;
     private Long creatorId;
+    private String creatorUsername;
+    private Long assignedToId;
+    private String assignedToUsername;
+    private Long projectId;
+    private String projectName;
     private Set<LabelResponseDto> labels;
 }

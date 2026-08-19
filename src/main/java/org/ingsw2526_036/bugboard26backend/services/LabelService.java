@@ -1,6 +1,5 @@
 package org.ingsw2526_036.bugboard26backend.services;
 
-import java.nio.file.AccessDeniedException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -13,6 +12,7 @@ import org.ingsw2526_036.bugboard26backend.entities.User;
 import org.ingsw2526_036.bugboard26backend.exception.ResourceNotFoundException;
 import org.ingsw2526_036.bugboard26backend.repositories.IssueRepository;
 import org.ingsw2526_036.bugboard26backend.repositories.LabelRepository;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import jakarta.transaction.Transactional;
@@ -47,7 +47,7 @@ public class LabelService {
     }
 
     @Transactional
-    public Label updateLabel(Long id, LabelRequestDto dto, User requester) throws AccessDeniedException {
+    public Label updateLabel(Long id, LabelRequestDto dto, User requester) {
         if (!(requester instanceof Administrator)) {
             throw new AccessDeniedException("Only Administrators can modify labels.");
         }
@@ -65,7 +65,7 @@ public class LabelService {
     }
 
     @Transactional
-    public void deleteLabel(Long id, User requester) throws AccessDeniedException {
+    public void deleteLabel(Long id, User requester) {
         if (!(requester instanceof Administrator)) {
             throw new AccessDeniedException("Only Administrators can delete labels.");
         }

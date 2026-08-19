@@ -1,6 +1,5 @@
 package org.ingsw2526_036.bugboard26backend.controllers;
 
-import java.nio.file.AccessDeniedException;
 import java.util.List;
 
 import org.ingsw2526_036.bugboard26backend.dtos.LabelRequestDto;
@@ -57,14 +56,14 @@ public class LabelController {
     @PutMapping("/{id}")
     public ResponseEntity<@NonNull LabelResponseDto> updateLabel(@PathVariable Long id,
                                                                  @Valid @RequestBody LabelRequestDto dto,
-                                                                 @AuthenticationPrincipal User requester) throws AccessDeniedException {
+                                                                 @AuthenticationPrincipal User requester) {
         Label updatedLabel = labelService.updateLabel(id, dto, requester);
         return ResponseEntity.ok(labelMapper.toDto(updatedLabel));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteLabel(@PathVariable Long id,
-                                            @AuthenticationPrincipal User requester) throws AccessDeniedException {
+                                            @AuthenticationPrincipal User requester) {
         labelService.deleteLabel(id, requester);
         return ResponseEntity.noContent().build();
     }
