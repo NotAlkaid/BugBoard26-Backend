@@ -4,6 +4,7 @@ package org.ingsw2526_036.bugboard26backend.services;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.ingsw2526_036.bugboard26backend.config.JwtService;
+import org.ingsw2526_036.bugboard26backend.config.SecurityUser;
 import org.ingsw2526_036.bugboard26backend.dtos.AuthenticationRequestDto;
 import org.ingsw2526_036.bugboard26backend.dtos.AuthenticationResponseDto;
 import org.ingsw2526_036.bugboard26backend.entities.User;
@@ -28,7 +29,7 @@ public class AuthenticationService {
         Map<String, Object> claims = new HashMap<>();
         claims.put("role", user.getRole().name());
         claims.put("userId", user.getId());
-        claims.put("username", user.getRealUsername());
+        claims.put("username", user.getUsername());
         return claims;
     }
 
@@ -37,11 +38,11 @@ public class AuthenticationService {
         if(userRepository.existsByEmail(user.getEmail())) {
             throw new DuplicateResourceException("Email already in use");
         }
-        if(userRepository.existsByUsername(user.getRealUsername())) {
+        if(userRepository.existsByUsername(user.getUsername())) {
             throw new DuplicateResourceException("Username already in use");
         }
         userRepository.save(user);
-        var jwtToken = jwtService.generateToken(getCustomClaims(user), user);
+        var jwtToken = jwtService.generateToken(getCustomClaims(user), new SecurityUser(user));
         return new AuthenticationResponseDto(jwtToken);
     }
 
@@ -54,7 +55,7 @@ public class AuthenticationService {
         );
         User saveduser = userRepository.findByEmail(user.getEmail()).
                 orElseThrow(() -> new UsernameNotFoundException("User not found"));
-        var jwtToken = jwtService.generateToken(getCustomClaims(saveduser), saveduser);
+        var jwtToken = jwtService.generateToken(getCustomClaims(saveduser), new SecurityUser(saveduser));
         return new AuthenticationResponseDto(jwtToken);
     }
 }

@@ -4,10 +4,6 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.util.List;
 import org.ingsw2526_036.bugboard26backend.enums.RoleEnum;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
-import java.util.Collection;
 
 @Entity
 @Getter
@@ -18,7 +14,7 @@ import java.util.Collection;
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = "USERTYPE",  discriminatorType = DiscriminatorType.STRING)
 @Table(name = "users") 
-public abstract class User implements UserDetails {
+public abstract class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @NonNull
@@ -52,40 +48,5 @@ public abstract class User implements UserDetails {
 
     public RoleEnum getRole() {
         return (this instanceof Administrator) ? RoleEnum.ADMIN : RoleEnum.BASEUSER;
-    }
-
-    @Override
-    public @NonNull Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority("ROLE_" + getRole().name()));
-    }
-
-    // Metodo richiesto da Spring Security (UserDetails): restituisce l'email perché usata come identificativo di login
-    @Override
-    public @NonNull String getUsername() {
-        return this.email;
-    }
-
-    // Restituisce il nickname/username reale dell'utente (colonna 'username' a database)
-    public @NonNull String getRealUsername() {
-        return this.username;
-    }
-
-    @Override
-    public boolean isAccountNonExpired() {
-        return true;
-    }
-    @Override
-    public boolean isAccountNonLocked() {
-        return true;
-    }
-
-    @Override
-    public boolean isCredentialsNonExpired() {
-        return true;
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return true;
     }
 }

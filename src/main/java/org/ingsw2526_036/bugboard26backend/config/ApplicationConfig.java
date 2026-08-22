@@ -22,7 +22,9 @@ public class ApplicationConfig {
     public UserDetailsService userDetailsService() {
         // Logica per trovare l'utente nel DB tramite email
         return username -> repository.findByEmail(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+                // Converte/adatta l'entità User nell'oggetto di sicurezza SecurityUser (UserDetails)
+                .map(SecurityUser::new)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
     }
 
     @Bean
