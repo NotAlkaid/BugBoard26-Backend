@@ -8,6 +8,7 @@ class BugBoard26BackendApplicationTests {
 
     @Test
     void contextLoads() {
+        // Test di springboot
     }
 
 }
