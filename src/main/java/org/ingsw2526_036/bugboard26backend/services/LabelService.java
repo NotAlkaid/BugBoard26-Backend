@@ -22,6 +22,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class LabelService {
 
+    private static final String ISSUE_NOT_FOUND_MSG = "Issue not found with id: ";
+
     private final LabelRepository labelRepository;
     private final IssueRepository issueRepository;
     private final IssueService issueService;
@@ -80,7 +82,7 @@ public class LabelService {
     @Transactional
     public Issue addLabelToIssue(Long issueId, Long labelId, User requester) {
         Issue issue = issueRepository.findById(issueId)
-                .orElseThrow(() -> new ResourceNotFoundException("Issue not found with id: " + issueId));
+                .orElseThrow(() -> new ResourceNotFoundException(ISSUE_NOT_FOUND_MSG + issueId));
         Label label = getLabelById(labelId);
 
         issueService.checkModificationPermissions(issue, requester);
@@ -92,7 +94,7 @@ public class LabelService {
     @Transactional
     public Issue removeLabelFromIssue(Long issueId, Long labelId, User requester) {
         Issue issue = issueRepository.findById(issueId)
-                .orElseThrow(() -> new ResourceNotFoundException("Issue not found with id: " + issueId));
+                .orElseThrow(() -> new ResourceNotFoundException(ISSUE_NOT_FOUND_MSG + issueId));
         Label label = getLabelById(labelId);
 
         issueService.checkModificationPermissions(issue, requester);
@@ -104,7 +106,7 @@ public class LabelService {
     @Transactional
     public Issue setIssueLabels(Long issueId, Set<Long> labelIds, User requester) {
         Issue issue = issueRepository.findById(issueId)
-                .orElseThrow(() -> new ResourceNotFoundException("Issue not found with id: " + issueId));
+                .orElseThrow(() -> new ResourceNotFoundException(ISSUE_NOT_FOUND_MSG + issueId));
 
         issueService.checkModificationPermissions(issue, requester);
 

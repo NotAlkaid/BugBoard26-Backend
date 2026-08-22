@@ -18,6 +18,9 @@ import jakarta.validation.ConstraintViolationException;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    private static final String KEY_ERROR = "error";
+    private static final String KEY_MESSAGE = "message";
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<@NonNull String> handleIllegalArgumentException(IllegalArgumentException exception) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(exception.getMessage());
@@ -54,8 +57,8 @@ public class GlobalExceptionHandler {
     public ResponseEntity<@NonNull Map<String, String>> handleConstraintViolation(ConstraintViolationException ex) {
         Map<String, String> errorResponse = new HashMap<>();
         
-        errorResponse.put("error", "Validation Error");
-        errorResponse.put("message", ex.getMessage()); 
+        errorResponse.put(KEY_ERROR, "Validation Error");
+        errorResponse.put(KEY_MESSAGE, ex.getMessage()); 
 
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST); // Ritorna 400
     }
@@ -63,16 +66,16 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
     public ResponseEntity<Map<String, String>> handleAccessDeniedException(org.springframework.security.access.AccessDeniedException ex) {
         Map<String, String> errorResponse = new HashMap<>();
-        errorResponse.put("error", "Forbidden");
-        errorResponse.put("message", ex.getMessage());
+        errorResponse.put(KEY_ERROR, "Forbidden");
+        errorResponse.put(KEY_MESSAGE, ex.getMessage());
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
     }
 
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<Map<String, String>> handleIllegalStateException(IllegalStateException ex) {
         Map<String, String> errorResponse = new HashMap<>();
-        errorResponse.put("error", "Bad Request");
-        errorResponse.put("message", ex.getMessage());
+        errorResponse.put(KEY_ERROR, "Bad Request");
+        errorResponse.put(KEY_MESSAGE, ex.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
 }

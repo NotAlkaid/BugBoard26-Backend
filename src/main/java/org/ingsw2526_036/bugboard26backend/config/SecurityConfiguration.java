@@ -25,6 +25,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class SecurityConfiguration {
 
+    private static final String ROLE_ADMIN = "ADMIN";
+
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final AuthenticationProvider authenticationProvider;
 
@@ -44,11 +46,11 @@ public class SecurityConfiguration {
                                 "/swagger-ui/**",
                                 "/swagger-ui.html"
                         ).permitAll()
-                        .requestMatchers("/api/v1/auth/createuser").hasRole("ADMIN")
-                        .requestMatchers("/api/projects/createproject").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/projects/*/participants").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/labels/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/labels/**").hasRole("ADMIN")
+                        .requestMatchers("/api/v1/auth/createuser").hasRole(ROLE_ADMIN)
+                        .requestMatchers("/api/projects/createproject").hasRole(ROLE_ADMIN)
+                        .requestMatchers(HttpMethod.POST, "/api/projects/*/participants").hasRole(ROLE_ADMIN)
+                        .requestMatchers(HttpMethod.PUT, "/api/labels/**").hasRole(ROLE_ADMIN)
+                        .requestMatchers(HttpMethod.DELETE, "/api/labels/**").hasRole(ROLE_ADMIN)
                         .anyRequest().authenticated()
                 )
                 // Gestione della sessione Stateless
