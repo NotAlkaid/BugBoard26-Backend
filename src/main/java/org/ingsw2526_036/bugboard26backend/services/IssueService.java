@@ -5,14 +5,13 @@ import org.ingsw2526_036.bugboard26backend.repositories.IssueRepository;
 import org.ingsw2526_036.bugboard26backend.repositories.ProjectRepository;
 import org.ingsw2526_036.bugboard26backend.mappers.IssueMapper;
 import lombok.RequiredArgsConstructor;
+import org.ingsw2526_036.bugboard26backend.dtos.IssueFilterDto;
 import org.ingsw2526_036.bugboard26backend.dtos.IssueRequestDto;
 import org.ingsw2526_036.bugboard26backend.entities.Administrator;
 import org.ingsw2526_036.bugboard26backend.entities.Issue;
 import org.ingsw2526_036.bugboard26backend.entities.Project;
 import org.ingsw2526_036.bugboard26backend.entities.User;
-import org.ingsw2526_036.bugboard26backend.enums.PriorityEnum;
 import org.ingsw2526_036.bugboard26backend.enums.StateEnum;
-import org.ingsw2526_036.bugboard26backend.enums.TypeEnum;
 import org.ingsw2526_036.bugboard26backend.exception.ResourceNotFoundException;
 import org.ingsw2526_036.bugboard26backend.repositories.LabelRepository;
 import org.ingsw2526_036.bugboard26backend.repositories.UserRepository;
@@ -33,6 +32,8 @@ public class IssueService {
     private static final Set<String> ALLOWED_SORT_PROPERTIES = Set.of(
             "id", "title", "description", "creationDate", "priority", "state", "type"
     );
+
+    private static final String ISSUE_NOT_FOUND_MSG = "Issue not found with id: ";
 
     private final IssueRepository issueRepository;
     private final ProjectRepository projectRepository;
@@ -59,7 +60,7 @@ public class IssueService {
     @Transactional
     public Issue modifyIssue(Long issueId, IssueRequestDto dto, User requester) {
         Issue issue = issueRepository.findById(issueId)
-                .orElseThrow(() -> new ResourceNotFoundException("Issue not found with id: " + issueId));
+                .orElseThrow(() -> new ResourceNotFoundException(ISSUE_NOT_FOUND_MSG + issueId));
 
         // Verifico i permessi in base allo stato
         checkModificationPermissions(issue, requester);
@@ -83,7 +84,7 @@ public class IssueService {
 
         switch (issue.getState()) {
             case TODO:
-                // In TODO: Solo Creatore o Admin
+                // Nello stato iniziale (da fare): Solo Creatore o Admin
                 if (!isCreator && !isAdmin) {
                     throw new AccessDeniedException("Solo il creatore o un amministratore possono modificare una issue in stato TODO.");
                 }
@@ -106,7 +107,7 @@ public class IssueService {
     @Transactional
     public Issue promoteIssue(Long issueId, User requester) {
         Issue issue = issueRepository.findById(issueId)
-                .orElseThrow(() -> new ResourceNotFoundException("Issue not found with id: " + issueId));
+                .orElseThrow(() -> new ResourceNotFoundException(ISSUE_NOT_FOUND_MSG + issueId));
 
         // Regola specifica: INPROGRESS -> CLOSED
         if (issue.getState() == StateEnum.INPROGRESS) {
@@ -120,7 +121,7 @@ public class IssueService {
             }
         }
 
-        // Se passa il controllo (o se è in stato TODO, non ci sono vincoli per la promozione)
+        // Se passa il controllo (o se è nello stato iniziale, non ci sono vincoli per la promozione)
         issue.promote();
 
         return issueRepository.save(issue);
@@ -129,22 +130,18 @@ public class IssueService {
     @Transactional
     public Issue demoteIssue(Long issueId, User requester) {
         Issue issue = issueRepository.findById(issueId)
-                .orElseThrow(() -> new ResourceNotFoundException("Issue not found with id: " + issueId));
+                .orElseThrow(() -> new ResourceNotFoundException(ISSUE_NOT_FOUND_MSG + issueId));
 
         boolean isAdmin = requester instanceof Administrator;
         boolean isAssignee = issue.getAssignedTo() != null &&
                 issue.getAssignedTo().getId().equals(requester.getId());
 
-        if (issue.getState() == StateEnum.CLOSED) {
+        if (issue.getState() == StateEnum.CLOSED && !isAdmin) {
             // Riapertura di una issue chiusa: Solo Admin
-            if (!isAdmin) {
-                throw new AccessDeniedException("Solo un amministratore può riaprire una issue chiusa.");
-            }
-        } else if (issue.getState() == StateEnum.INPROGRESS) {
-            // Retrocessione a TODO: Solo Assegnatario o Admin
-            if (!isAssignee && !isAdmin) {
-                throw new AccessDeniedException("Solo l'assegnatario o un amministratore possono retrocedere la issue a TODO.");
-            }
+            throw new AccessDeniedException("Solo un amministratore può riaprire una issue chiusa.");
+        } else if (issue.getState() == StateEnum.INPROGRESS && !isAssignee && !isAdmin) {
+            // Retrocessione allo stato iniziale: Solo Assegnatario o Admin
+            throw new AccessDeniedException("Solo l'assegnatario o un amministratore possono retrocedere la issue a TODO.");
         }
 
         issue.demote();
@@ -155,7 +152,7 @@ public class IssueService {
     @Transactional
     public Issue assignIssue(Long issueId, Long userId, User requester) {
         Issue issue = issueRepository.findById(issueId)
-                .orElseThrow(() -> new ResourceNotFoundException("Issue not found with id: " + issueId));
+                .orElseThrow(() -> new ResourceNotFoundException(ISSUE_NOT_FOUND_MSG + issueId));
         // Solo Admin può assegnare
         if (!(requester instanceof Administrator)) {
             throw new AccessDeniedException("Only Administrators can assign issues.");
@@ -185,18 +182,14 @@ public class IssueService {
     }
 
     public List<Issue> getIssues(Long projectId,
-                                 TypeEnum type,
-                                 StateEnum state,
-                                 PriorityEnum priority,
-                                 Long assignedToId,
-                                 Long labelId,
+                                 IssueFilterDto filter,
                                  String sortBy,
                                  String sortDir) {
         if (!projectRepository.existsById(projectId)) {
             throw new ResourceNotFoundException("Project not found with id: " + projectId);
         }
 
-        Specification<Issue> spec = IssueSpecification.withFilters(projectId, type, state, priority, assignedToId, labelId);
+        Specification<Issue> spec = IssueSpecification.withFilters(projectId, filter);
 
         Sort.Direction direction = "asc".equalsIgnoreCase(sortDir) ? Sort.Direction.ASC : Sort.Direction.DESC;
         String property = (sortBy != null && ALLOWED_SORT_PROPERTIES.contains(sortBy)) ? sortBy : "creationDate";

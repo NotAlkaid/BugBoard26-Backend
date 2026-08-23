@@ -3,6 +3,7 @@ package org.ingsw2526_036.bugboard26backend.controllers;
 import java.util.List;
 import java.util.Set;
 
+import org.ingsw2526_036.bugboard26backend.dtos.IssueFilterDto;
 import org.ingsw2526_036.bugboard26backend.dtos.IssueRequestDto;
 import org.ingsw2526_036.bugboard26backend.dtos.IssueResponseDto;
 import org.ingsw2526_036.bugboard26backend.entities.Issue;
@@ -62,7 +63,8 @@ public class IssueController {
             @RequestParam(required = false) Long labelId,
             @RequestParam(defaultValue = "creationDate") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir) {
-        List<Issue> issues = issueService.getIssues(projectId, type, state, priority, assignedToId, labelId, sortBy, sortDir);
+        IssueFilterDto filter = new IssueFilterDto(type, state, priority, assignedToId, labelId);
+        List<Issue> issues = issueService.getIssues(projectId, filter, sortBy, sortDir);
         List<IssueResponseDto> dtoIssues = issues
                 .stream()
                 .map(issueMapper::toDto)
