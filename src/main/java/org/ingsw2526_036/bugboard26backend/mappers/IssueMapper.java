@@ -26,9 +26,9 @@ public interface IssueMapper {
     Issue toEntity(IssueRequestDto dto);
 
     @Mapping(target = "creatorId", source = "creator.id")
-    @Mapping(target = "creatorUsername", source = "creator.realUsername")
+    @Mapping(target = "creatorUsername", source = "creator.username")
     @Mapping(target = "assignedToId", source = "assignedTo.id")
-    @Mapping(target = "assignedToUsername", source = "assignedTo.realUsername")
+    @Mapping(target = "assignedToUsername", source = "assignedTo.username")
     @Mapping(target = "projectId", source = "project.id")
     @Mapping(target = "projectName", source = "project.name")
     IssueResponseDto toDto(Issue issue);

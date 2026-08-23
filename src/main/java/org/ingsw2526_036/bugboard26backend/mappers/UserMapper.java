@@ -21,7 +21,7 @@ public class UserMapper {
         if (user == null) return null;
         return new UserResponseDto(
                 user.getId(),
-                user.getRealUsername(),
+                user.getUsername(),
                 user.getEmail(),
                 user.getRole().name()
         );
