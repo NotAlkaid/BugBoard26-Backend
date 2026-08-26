@@ -20,7 +20,7 @@ import java.util.List;
 @Getter
 public class SecurityUser implements UserDetails {
 
-    private final User user;
+    private final transient User user;
 
     @Override
     public @NonNull String getUsername() {
