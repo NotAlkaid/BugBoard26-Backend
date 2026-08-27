@@ -2,6 +2,7 @@ package org.ingsw2526_036.bugboard26backend.services;
 
 import org.ingsw2526_036.bugboard26backend.dtos.IssueFilterDto;
 import org.ingsw2526_036.bugboard26backend.dtos.IssueRequestDto;
+import org.ingsw2526_036.bugboard26backend.entities.Administrator;
 import org.ingsw2526_036.bugboard26backend.entities.BaseUser;
 import org.ingsw2526_036.bugboard26backend.entities.Issue;
 import org.ingsw2526_036.bugboard26backend.entities.Label;
@@ -26,6 +27,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.access.AccessDeniedException;
 
 import java.sql.Date;
 import java.util.Collections;
@@ -60,14 +62,36 @@ class IssueServiceTest {
 
     private Project sampleProject;
     private BaseUser creatorUser;
+    private BaseUser assigneeUser;
+    private BaseUser otherUser;
+    private Administrator adminUser;
 
     @BeforeEach
     void setUp() {
         creatorUser = new BaseUser();
         creatorUser.setId(1L);
+        creatorUser.setUsername("creatorUser");
+        creatorUser.setEmail("creator@test.com");
+
+        assigneeUser = new BaseUser();
+        assigneeUser.setId(2L);
+        assigneeUser.setUsername("assigneeUser");
+        assigneeUser.setEmail("assignee@test.com");
+
+        otherUser = new BaseUser();
+        otherUser.setId(3L);
+        otherUser.setUsername("otherUser");
+        otherUser.setEmail("other@test.com");
+
+        adminUser = new Administrator();
+        adminUser.setId(99L);
+        adminUser.setUsername("adminUser");
+        adminUser.setEmail("admin@test.com");
 
         sampleProject = new Project();
         sampleProject.setId(1L);
+        sampleProject.setName("Sample Project");
+        sampleProject.setCreator(adminUser);
     }
 
 
@@ -327,6 +351,255 @@ class IssueServiceTest {
             assertTrue(mappedIssue.getLabels().contains(label2));
             verify(labelRepository, times(1)).findAllById(labelIds);
             verify(issueRepository, times(1)).save(mappedIssue);
+        }
+    }
+
+    /**
+     * Test per il metodo modifyIssue(Long issueId, IssueRequestDto dto, User requester)
+     *
+     * Strategia di Test: R-WECT (Robust Weak Equivalence Class Testing)
+     *
+     * 1. Analisi delle Classi di Equivalenza (CE) sui parametri e logica di business:
+     *    1) issueId:
+     *       - [V_id]              ID issue esistente nel DB.
+     *       - [NV_id]             ID issue non presente nel DB -> lancia ResourceNotFoundException.
+     *    2) dto (IssueRequestDto):
+     *       - [V1_dto]            DTO valido senza etichette (labelIds == null).
+     *       - [V2_dto]            DTO valido con etichette (labelIds popolato da ID validi).
+     *       - [NV_dto]            DTO nullo o con campi non validi: gestito e bloccato a monte
+     *                             nel Controller tramite @Valid (HTTP 400 Bad Request).
+     *    3) requester (User) e permessi per stato dell'issue:
+     *       - Stato TO-DO (iniziale):
+     *         - [V_initial_creator]   Requester è il Creator -> Modifica consentita.
+     *         - [V_initial_admin]     Requester è Administrator -> Modifica consentita.
+     *         - [NV_initial_unauth]   Requester non è né Creator né Admin -> AccessDeniedException.
+     *       - Stato INPROGRESS:
+     *         - [V_inp_assignee]      Requester è l'Assignee -> Modifica consentita.
+     *         - [V_inp_admin]         Requester è Administrator -> Modifica consentita.
+     *         - [NV_inp_creator]      Requester è Creator ma non Assignee -> AccessDeniedException.
+     *       - Stato CLOSED:
+     *         - [V_closed_admin]      Requester è Administrator -> Modifica consentita.
+     *         - [NV_closed_user]      Requester non è Admin -> AccessDeniedException.
+     *       - Utente non autenticato: bloccato a monte da Spring Security (filtro JWT -> HTTP 401 Unauthorized).
+     *
+     * 2. Classi di Equivalenza effettivamente coperte nel Service (4 NV, 8 V):
+     *    - issueId   : [V_id], [NV_id]
+     *    - dto       : [V1_dto], [V2_dto]
+     *    - Permessi  : 5 classi [V] e 3 classi [NV] per le transizioni di stato (TO-DO, INPROGRESS, CLOSED)
+     *    => formula R-WECT : 4 (NV) + max(1, 2, 5) (V) = 9 test
+     *
+     * 3. Casi di test implementati (R-WECT / Single Fault Assumption):
+     *    - Test 1 [NV_id]                  : Issue inesistente -> modifyIssue_issueNotFound_throwsResourceNotFoundException
+     *    - Test 2 [V_id + TO-DO + Creator] : Stato TO-DO, requester Creator (senza label) -> modifyIssue_initialState_requesterIsCreator_successWithoutLabels
+     *    - Test 3 [V_id + TO-DO + Admin]   : Stato TO-DO, requester Admin (con label) -> modifyIssue_initialState_requesterIsAdmin_successWithLabels
+     *    - Test 4 [V_id + TO-DO + NonAuth] : Stato TO-DO, utente non autorizzato -> modifyIssue_initialState_unauthorizedUser_throwsAccessDeniedException
+     *    - Test 5 [V_id + INP + Assignee]  : Stato INPROGRESS, requester Assignee -> modifyIssue_inProgressState_requesterIsAssignee_success
+     *    - Test 6 [V_id + INP + Creator]   : Stato INPROGRESS, requester Creator (non Assignee) -> modifyIssue_inProgressState_requesterIsCreatorNotAssignee_throwsAccessDeniedException
+     *    - Test 7 [V_id + INP + Admin]     : Stato INPROGRESS, requester Admin -> modifyIssue_inProgressState_requesterIsAdmin_success
+     *    - Test 8 [V_id + CLOSED + NonAdm] : Stato CLOSED, requester non Admin -> modifyIssue_closedState_requesterNotAdmin_throwsAccessDeniedException
+     *    - Test 9 [V_id + CLOSED + Admin]  : Stato CLOSED, requester Admin -> modifyIssue_closedState_requesterIsAdmin_success
+     */
+    @Nested
+    @DisplayName("Test per il metodo modifyIssue")
+    class ModifyIssueTests {
+
+        @Test
+        @DisplayName("modifyIssue lancia ResourceNotFoundException se l'issue non esiste")
+        void modifyIssue_issueNotFound_throwsResourceNotFoundException() {
+            Long issueId = 999L;
+            IssueRequestDto dto = new IssueRequestDto();
+
+            when(issueRepository.findById(issueId)).thenReturn(Optional.empty());
+
+            ResourceNotFoundException exception = assertThrows(
+                    ResourceNotFoundException.class,
+                    () -> issueService.modifyIssue(issueId, dto, creatorUser)
+            );
+
+            assertEquals("Issue not found with id: " + issueId, exception.getMessage());
+            verify(issueRepository, times(1)).findById(issueId);
+            verifyNoInteractions(issueMapper);
+            verifyNoInteractions(labelRepository);
+        }
+
+        @Test
+        @DisplayName("modifyIssue in stato TO-DO: successo quando il richiedente è il Creator")
+        void modifyIssue_initialState_requesterIsCreator_successWithoutLabels() {
+            Long issueId = 10L;
+            IssueRequestDto dto = new IssueRequestDto();
+            dto.setTitle("Updated Title");
+            dto.setDescription("Updated Description");
+            dto.setLabelIds(null);
+
+            Issue existingIssue = new Issue(issueId, "Old Title", "Old Desc",
+                    new Date(System.currentTimeMillis()), PriorityEnum.LOW, StateEnum.TODO,
+                    TypeEnum.QUESTION, creatorUser, sampleProject);
+
+            when(issueRepository.findById(issueId)).thenReturn(Optional.of(existingIssue));
+            when(issueRepository.save(existingIssue)).thenReturn(existingIssue);
+
+            Issue result = issueService.modifyIssue(issueId, dto, creatorUser);
+
+            assertNotNull(result);
+            verify(issueMapper, times(1)).updateIssueFromDto(dto, existingIssue);
+            verify(labelRepository, never()).findAllById(any());
+            verify(issueRepository, times(1)).save(existingIssue);
+        }
+
+        @Test
+        @DisplayName("modifyIssue in stato TO-DO: successo quando il richiedente è Admin (anche con labelIds)")
+        void modifyIssue_initialState_requesterIsAdmin_successWithLabels() {
+            Long issueId = 10L;
+            Set<Long> labelIds = Set.of(5L);
+            IssueRequestDto dto = new IssueRequestDto();
+            dto.setTitle("Admin Update");
+            dto.setLabelIds(labelIds);
+
+            Issue existingIssue = new Issue(issueId, "Old Title", "Old Desc",
+                    new Date(System.currentTimeMillis()), PriorityEnum.LOW, StateEnum.TODO,
+                    TypeEnum.BUG, creatorUser, sampleProject);
+
+            Label label = new Label("Security", "#112233");
+            label.setId(5L);
+
+            when(issueRepository.findById(issueId)).thenReturn(Optional.of(existingIssue));
+            when(labelRepository.findAllById(labelIds)).thenReturn(List.of(label));
+            when(issueRepository.save(existingIssue)).thenReturn(existingIssue);
+
+            Issue result = issueService.modifyIssue(issueId, dto, adminUser);
+
+            assertNotNull(result);
+            verify(issueMapper, times(1)).updateIssueFromDto(dto, existingIssue);
+            verify(labelRepository, times(1)).findAllById(labelIds);
+            assertTrue(existingIssue.getLabels().contains(label));
+            verify(issueRepository, times(1)).save(existingIssue);
+        }
+
+        @Test
+        @DisplayName("modifyIssue in stato TO-DO: lancia AccessDeniedException se l'utente non è né Creator né Admin")
+        void modifyIssue_initialState_unauthorizedUser_throwsAccessDeniedException() {
+            Long issueId = 10L;
+            IssueRequestDto dto = new IssueRequestDto();
+
+            Issue existingIssue = new Issue(issueId, "Title", "Desc",
+                    new Date(System.currentTimeMillis()), PriorityEnum.LOW, StateEnum.TODO,
+                    TypeEnum.BUG, creatorUser, sampleProject);
+
+            when(issueRepository.findById(issueId)).thenReturn(Optional.of(existingIssue));
+
+            AccessDeniedException exception = assertThrows(
+                    AccessDeniedException.class,
+                    () -> issueService.modifyIssue(issueId, dto, otherUser)
+            );
+
+            assertEquals("Solo il creatore o un amministratore possono modificare una issue in stato TODO.", exception.getMessage());
+            verify(issueRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("modifyIssue in stato INPROGRESS: successo quando il richiedente è l'Assignee")
+        void modifyIssue_inProgressState_requesterIsAssignee_success() {
+            Long issueId = 10L;
+            IssueRequestDto dto = new IssueRequestDto();
+            dto.setTitle("Fixing bug");
+
+            Issue existingIssue = new Issue(issueId, "Title", "Desc",
+                    new Date(System.currentTimeMillis()), PriorityEnum.MEDIUM, StateEnum.INPROGRESS,
+                    TypeEnum.BUG, creatorUser, sampleProject);
+            existingIssue.setAssignedTo(assigneeUser);
+
+            when(issueRepository.findById(issueId)).thenReturn(Optional.of(existingIssue));
+            when(issueRepository.save(existingIssue)).thenReturn(existingIssue);
+
+            Issue result = issueService.modifyIssue(issueId, dto, assigneeUser);
+
+            assertNotNull(result);
+            verify(issueMapper, times(1)).updateIssueFromDto(dto, existingIssue);
+            verify(issueRepository, times(1)).save(existingIssue);
+        }
+
+        @Test
+        @DisplayName("modifyIssue in stato INPROGRESS: lancia AccessDeniedException se il richiedente è solo Creator ma non Assignee")
+        void modifyIssue_inProgressState_requesterIsCreatorNotAssignee_throwsAccessDeniedException() {
+            Long issueId = 10L;
+            IssueRequestDto dto = new IssueRequestDto();
+
+            Issue existingIssue = new Issue(issueId, "Title", "Desc",
+                    new Date(System.currentTimeMillis()), PriorityEnum.MEDIUM, StateEnum.INPROGRESS,
+                    TypeEnum.BUG, creatorUser, sampleProject);
+            existingIssue.setAssignedTo(assigneeUser);
+
+            when(issueRepository.findById(issueId)).thenReturn(Optional.of(existingIssue));
+
+            AccessDeniedException exception = assertThrows(
+                    AccessDeniedException.class,
+                    () -> issueService.modifyIssue(issueId, dto, creatorUser)
+            );
+
+            assertEquals("Solo l'assegnatario o un amministratore possono modificare una issue in stato INPROGRESS.", exception.getMessage());
+            verify(issueRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("modifyIssue in stato INPROGRESS: successo quando il richiedente è Admin (anche se non assignee)")
+        void modifyIssue_inProgressState_requesterIsAdmin_success() {
+            Long issueId = 10L;
+            IssueRequestDto dto = new IssueRequestDto();
+
+            Issue existingIssue = new Issue(issueId, "Title", "Desc",
+                    new Date(System.currentTimeMillis()), PriorityEnum.MEDIUM, StateEnum.INPROGRESS,
+                    TypeEnum.BUG, creatorUser, sampleProject);
+            existingIssue.setAssignedTo(assigneeUser);
+
+            when(issueRepository.findById(issueId)).thenReturn(Optional.of(existingIssue));
+            when(issueRepository.save(existingIssue)).thenReturn(existingIssue);
+
+            Issue result = issueService.modifyIssue(issueId, dto, adminUser);
+
+            assertNotNull(result);
+            verify(issueRepository, times(1)).save(existingIssue);
+        }
+
+        @Test
+        @DisplayName("modifyIssue in stato CLOSED: lancia AccessDeniedException se il richiedente non è Admin")
+        void modifyIssue_closedState_requesterNotAdmin_throwsAccessDeniedException() {
+            Long issueId = 10L;
+            IssueRequestDto dto = new IssueRequestDto();
+
+            Issue existingIssue = new Issue(issueId, "Title", "Desc",
+                    new Date(System.currentTimeMillis()), PriorityEnum.HIGH, StateEnum.CLOSED,
+                    TypeEnum.BUG, creatorUser, sampleProject);
+            existingIssue.setAssignedTo(assigneeUser);
+
+            when(issueRepository.findById(issueId)).thenReturn(Optional.of(existingIssue));
+
+            AccessDeniedException exception = assertThrows(
+                    AccessDeniedException.class,
+                    () -> issueService.modifyIssue(issueId, dto, assigneeUser)
+            );
+
+            assertEquals("Solo un amministratore può modificare una issue chiusa.", exception.getMessage());
+            verify(issueRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("modifyIssue in stato CLOSED: successo se il richiedente è Admin")
+        void modifyIssue_closedState_requesterIsAdmin_success() {
+            Long issueId = 10L;
+            IssueRequestDto dto = new IssueRequestDto();
+
+            Issue existingIssue = new Issue(issueId, "Title", "Desc",
+                    new Date(System.currentTimeMillis()), PriorityEnum.HIGH, StateEnum.CLOSED,
+                    TypeEnum.BUG, creatorUser, sampleProject);
+
+            when(issueRepository.findById(issueId)).thenReturn(Optional.of(existingIssue));
+            when(issueRepository.save(existingIssue)).thenReturn(existingIssue);
+
+            Issue result = issueService.modifyIssue(issueId, dto, adminUser);
+
+            assertNotNull(result);
+            verify(issueMapper, times(1)).updateIssueFromDto(dto, existingIssue);
+            verify(issueRepository, times(1)).save(existingIssue);
         }
     }
 
