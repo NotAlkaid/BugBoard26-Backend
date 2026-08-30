@@ -38,7 +38,7 @@ public class ProjectController {
 
     @PostMapping("/createproject")
     public ResponseEntity<@NonNull ProjectResponseDto> createProject(@Valid @RequestBody ProjectRequestDto projectRequestDto,
-                                                            @AuthenticationPrincipal Administrator creator) {
+                                                                     @AuthenticationPrincipal Administrator creator) {
         Project createdProject = projectService.createProject(projectRequestDto, creator);
         ProjectResponseDto projectResponseDto = projectMapper.toDto(createdProject);
         return ResponseEntity.status(HttpStatus.CREATED).body(projectResponseDto);
@@ -54,19 +54,19 @@ public class ProjectController {
                 .toList();
         return ResponseEntity.ok(dtoProjects);
     }
-    
+
     /**
-    * Add a user to a project.
-    * Purpose: Allow the administrator who created the project to add user as participant.
-    * Pattern: retrieves the authenticated requester from the security context
-    *          and delegates authorization and business logic to the service layer.
-    * Endpoint: POST /api/projects/{projectId}/participants
-    * Body: JSON user id, e.g. 1
-    */
+     * Add a user to a project.
+     * Purpose: Allow the administrator who created the project to add user as participant.
+     * Pattern: retrieves the authenticated requester from the security context
+     *          and delegates authorization and business logic to the service layer.
+     * Endpoint: POST /api/projects/{projectId}/participants
+     * Body: JSON user id, e.g. 1
+     */
     @PostMapping("/{projectId}/participants")
     public ResponseEntity<@NonNull ProjectResponseDto> addParticipant(@PathVariable Long projectId,
-                                                                @NotNull @RequestBody Long userId,
-                                                                @AuthenticationPrincipal User requester) {
+                                                                      @NotNull @RequestBody Long userId,
+                                                                      @AuthenticationPrincipal User requester) {
         Project updatedProject = projectService.addParticipant(projectId, userId, requester);
         ProjectResponseDto projectResponseDto = projectMapper.toDto(updatedProject);
         return ResponseEntity.ok(projectResponseDto);
@@ -74,8 +74,8 @@ public class ProjectController {
 
     @GetMapping("/{projectId}/participants")
     public ResponseEntity<@NonNull List<UserResponseDto>> getProjectParticipants(@PathVariable Long projectId) {
-        Project project = projectService.findById(projectId);
-        List<UserResponseDto> participantDtos = project.getParticipants()
+        List<User> participants = projectService.getParticipants(projectId);
+        List<UserResponseDto> participantDtos = participants
                 .stream()
                 .map(userMapper::toDto)
                 .toList();

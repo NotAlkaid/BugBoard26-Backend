@@ -45,34 +45,34 @@ public class ProjectService {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("ProjectId not valid"));
 
-            
+
         if (!(project.getCreator().getId().equals(requester.getId()))) {
             throw new IllegalArgumentException("Only the project creator can add participants");
         }
 
-            
+
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("UserId not valid"));
-                    
-            // Gestione liste (inizializzazione difensiva se null, anche se JPA di solito le istanzia)            
-            if (user.getJoinedProjects() == null) user.setJoinedProjects(new ArrayList<>());
-            if (project.getParticipants() == null) project.setParticipants(new ArrayList<>());
 
-            // Aggiungo solo se non c'è già
-            if (!user.getJoinedProjects().contains(project)) {
-                // Modifico il lato Owning (User)
-                user.getJoinedProjects().add(project);
-                // Modifico anche il lato Inverse (Project) per coerenza in memoria
-                project.getParticipants().add(user);
-            }
-            else
-            {
-                throw new DuplicateResourceException("User with id " + user.getId() + 
-                                                     " is already a participant of the project with id " + project.getId());
-            }
+        // Gestione liste (inizializzazione difensiva se null, anche se JPA di solito le istanzia)
+        if (user.getJoinedProjects() == null) user.setJoinedProjects(new ArrayList<>());
+        if (project.getParticipants() == null) project.setParticipants(new ArrayList<>());
+
+        // Aggiungo solo se non c'è già
+        if (!user.getJoinedProjects().contains(project)) {
+            // Modifico il lato Owning (User)
+            user.getJoinedProjects().add(project);
+            // Modifico anche il lato Inverse (Project) per coerenza in memoria
+            project.getParticipants().add(user);
+        }
+        else
+        {
+            throw new DuplicateResourceException("User with id " + user.getId() +
+                    " is already a participant of the project with id " + project.getId());
+        }
         return projectRepository.save(project);
     }
- 
+
     public List<Project> findAll() {
         return projectRepository.findAll();
     }
@@ -80,5 +80,11 @@ public class ProjectService {
     public Project findById(Long projectId) {
         return projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("ProjectId not valid"));
+    }
+
+    @Transactional
+    public List<User> getParticipants(Long projectId) {
+        Project project = findById(projectId);
+        return new ArrayList<>(project.getParticipants());
     }
 }
