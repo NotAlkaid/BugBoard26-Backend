@@ -1,6 +1,7 @@
 package org.ingsw2526_036.bugboard26backend.services;
 
 import org.ingsw2526_036.bugboard26backend.dtos.CommentRequestDto;
+import org.ingsw2526_036.bugboard26backend.dtos.CommentResponseDto;
 import org.ingsw2526_036.bugboard26backend.entities.Administrator;
 import org.ingsw2526_036.bugboard26backend.entities.BaseUser;
 import org.ingsw2526_036.bugboard26backend.entities.Comment;
@@ -13,6 +14,7 @@ import org.ingsw2526_036.bugboard26backend.exception.ResourceNotFoundException;
 import org.ingsw2526_036.bugboard26backend.mappers.CommentMapper;
 import org.ingsw2526_036.bugboard26backend.repositories.CommentRepository;
 import org.ingsw2526_036.bugboard26backend.repositories.IssueRepository;
+import org.ingsw2526_036.bugboard26backend.repositories.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -40,6 +42,9 @@ class CommentServiceTest {
 
     @Mock
     private IssueRepository issueRepository;
+
+    @Mock
+    private UserRepository userRepository;
 
     @Mock
     private CommentMapper commentMapper;
@@ -142,6 +147,7 @@ class CommentServiceTest {
             nonParticipant.setJoinedProjects(new ArrayList<>(List.of(otherProject)));
 
             when(issueRepository.findById(issueId)).thenReturn(Optional.of(sampleIssue));
+            when(userRepository.findById(nonParticipant.getId())).thenReturn(Optional.of(nonParticipant));
 
             AccessDeniedException exception = assertThrows(
                     AccessDeniedException.class,
@@ -166,6 +172,7 @@ class CommentServiceTest {
             userWithNullProjects.setJoinedProjects(null);
 
             when(issueRepository.findById(issueId)).thenReturn(Optional.of(sampleIssue));
+            when(userRepository.findById(userWithNullProjects.getId())).thenReturn(Optional.of(userWithNullProjects));
 
             AccessDeniedException exception = assertThrows(
                     AccessDeniedException.class,
@@ -190,11 +197,17 @@ class CommentServiceTest {
             Comment savedComment = new Comment(1L, dto.getBody(), new Date(System.currentTimeMillis()),
                     creatorUser, sampleIssue);
 
+            CommentResponseDto responseDto = new CommentResponseDto();
+            responseDto.setId(1L);
+            responseDto.setBody("This is a valid comment");
+
             when(issueRepository.findById(issueId)).thenReturn(Optional.of(sampleIssue));
+            when(userRepository.findById(creatorUser.getId())).thenReturn(Optional.of(creatorUser));
             when(commentMapper.toEntity(dto)).thenReturn(mappedComment);
             when(commentRepository.save(mappedComment)).thenReturn(savedComment);
+            when(commentMapper.toDto(savedComment)).thenReturn(responseDto);
 
-            Comment result = commentService.addComment(projectId, issueId, dto, creatorUser);
+            CommentResponseDto result = commentService.addComment(projectId, issueId, dto, creatorUser);
 
             assertNotNull(result);
             assertEquals(1L, result.getId());
@@ -202,6 +215,7 @@ class CommentServiceTest {
             assertEquals(creatorUser, mappedComment.getCreator());
             assertEquals(sampleIssue, mappedComment.getIssue());
             verify(commentRepository, times(1)).save(mappedComment);
+            verify(commentMapper, times(1)).toDto(savedComment);
         }
 
         @Test
@@ -218,17 +232,24 @@ class CommentServiceTest {
             Comment savedComment = new Comment(2L, dto.getBody(), new Date(System.currentTimeMillis()),
                     adminUser, sampleIssue);
 
+            CommentResponseDto responseDto = new CommentResponseDto();
+            responseDto.setId(2L);
+            responseDto.setBody("Admin comment");
+
             when(issueRepository.findById(issueId)).thenReturn(Optional.of(sampleIssue));
+            when(userRepository.findById(adminUser.getId())).thenReturn(Optional.of(adminUser));
             when(commentMapper.toEntity(dto)).thenReturn(mappedComment);
             when(commentRepository.save(mappedComment)).thenReturn(savedComment);
+            when(commentMapper.toDto(savedComment)).thenReturn(responseDto);
 
-            Comment result = commentService.addComment(projectId, issueId, dto, adminUser);
+            CommentResponseDto result = commentService.addComment(projectId, issueId, dto, adminUser);
 
             assertNotNull(result);
             assertEquals(2L, result.getId());
             assertEquals(adminUser, mappedComment.getCreator());
             assertEquals(sampleIssue, mappedComment.getIssue());
             verify(commentRepository, times(1)).save(mappedComment);
+            verify(commentMapper, times(1)).toDto(savedComment);
         }
     }
 }

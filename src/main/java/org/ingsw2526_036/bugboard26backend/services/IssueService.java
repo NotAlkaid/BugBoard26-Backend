@@ -151,7 +151,7 @@ public class IssueService {
     }
 
     @Transactional
-    public Issue assignIssue(Long issueId, Long userId, User requester) {
+    public IssueResponseDto assignIssue(Long issueId, Long userId, User requester) {
         Issue issue = issueRepository.findById(issueId)
                 .orElseThrow(() -> new ResourceNotFoundException(ISSUE_NOT_FOUND_MSG + issueId));
         // Solo Admin può assegnare
@@ -162,7 +162,7 @@ public class IssueService {
         User assignee = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User to assign not found with id: " + userId));
 
-        if (!assignee.getJoinedProjects().contains(issue.getProject())) {
+        if (assignee.getJoinedProjects() == null || !assignee.getJoinedProjects().contains(issue.getProject())) {
             throw new IllegalArgumentException("User with id " + assignee.getId() +
                     " is not a participant of the project with id " + issue.getProject().getId());
         }
@@ -175,7 +175,8 @@ public class IssueService {
         if (!assignee.getIssuesAssigned().contains(issue)) {
             assignee.getIssuesAssigned().add(issue);
         }
-        return issueRepository.save(issue);
+        Issue savedIssue = issueRepository.save(issue);
+        return issueMapper.toDto(savedIssue);
     }
 
     @Transactional

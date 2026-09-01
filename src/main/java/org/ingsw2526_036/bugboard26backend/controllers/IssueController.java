@@ -100,8 +100,8 @@ public class IssueController {
     public ResponseEntity<IssueResponseDto> assignIssue(@PathVariable Long issueId,
                                                         @PathVariable Long userId,
                                                         @AuthenticationPrincipal User requester) {
-        Issue updatedIssue = issueService.assignIssue(issueId, userId, requester);
-        return ResponseEntity.ok(issueMapper.toDto(updatedIssue));
+        IssueResponseDto responseDto = issueService.assignIssue(issueId, userId, requester);
+        return ResponseEntity.ok(responseDto);
     }
 
     @PostMapping("/{issueId}/labels/{labelId}")

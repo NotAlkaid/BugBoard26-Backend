@@ -3,6 +3,7 @@ package org.ingsw2526_036.bugboard26backend.services;
 import java.util.List;
 
 import org.ingsw2526_036.bugboard26backend.dtos.CommentRequestDto;
+import org.ingsw2526_036.bugboard26backend.dtos.CommentResponseDto;
 import org.ingsw2526_036.bugboard26backend.entities.Administrator;
 import org.ingsw2526_036.bugboard26backend.entities.Comment;
 import org.ingsw2526_036.bugboard26backend.entities.Issue;
@@ -11,6 +12,7 @@ import org.ingsw2526_036.bugboard26backend.exception.ResourceNotFoundException;
 import org.ingsw2526_036.bugboard26backend.mappers.CommentMapper;
 import org.ingsw2526_036.bugboard26backend.repositories.CommentRepository;
 import org.ingsw2526_036.bugboard26backend.repositories.IssueRepository;
+import org.ingsw2526_036.bugboard26backend.repositories.UserRepository;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
@@ -23,16 +25,20 @@ public class CommentService {
 
     private final CommentRepository commentRepository;
     private final IssueRepository issueRepository;
+    private final UserRepository userRepository;
     private final CommentMapper commentMapper;
 
     @Transactional
-    public Comment addComment(Long projectId, Long issueId, CommentRequestDto dto, User creator) {
+    public CommentResponseDto addComment(Long projectId, Long issueId, CommentRequestDto dto, User authUser) {
         Issue issue = issueRepository.findById(issueId)
                 .orElseThrow(() -> new ResourceNotFoundException("Issue not found with id: " + issueId));
 
         if (!issue.getProject().getId().equals(projectId)) {
             throw new IllegalArgumentException("Issue with id " + issueId + " does not belong to project with id " + projectId);
         }
+
+        User creator = userRepository.findById(authUser.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + authUser.getId()));
 
         boolean isAdmin = creator instanceof Administrator;
         boolean isParticipant = creator.getJoinedProjects() != null &&
@@ -46,9 +52,11 @@ public class CommentService {
         comment.setCreator(creator);
         comment.setIssue(issue);
 
-        return commentRepository.save(comment);
+        Comment savedComment = commentRepository.save(comment);
+        return commentMapper.toDto(savedComment);
     }
 
+    @Transactional
     public List<Comment> getCommentsByIssue(Long projectId, Long issueId) {
         Issue issue = issueRepository.findById(issueId)
                 .orElseThrow(() -> new ResourceNotFoundException("Issue not found with id: " + issueId));

@@ -37,8 +37,8 @@ public class CommentController {
                                                                  @PathVariable Long issueId,
                                                                  @Valid @RequestBody CommentRequestDto commentRequestDto,
                                                                  @AuthenticationPrincipal User creator) {
-        Comment comment = commentService.addComment(projectId, issueId, commentRequestDto, creator);
-        return ResponseEntity.status(HttpStatus.CREATED).body(commentMapper.toDto(comment));
+        CommentResponseDto responseDto = commentService.addComment(projectId, issueId, commentRequestDto, creator);
+        return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
     }
 
     @GetMapping({"", "/getcomments"})
