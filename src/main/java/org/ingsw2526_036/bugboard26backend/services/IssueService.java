@@ -59,7 +59,7 @@ public class IssueService {
     }
 
     @Transactional
-    public Issue modifyIssue(Long issueId, IssueRequestDto dto, User requester) {
+    public IssueResponseDto updateIssue(Long issueId, IssueRequestDto dto, User requester) {
         Issue issue = issueRepository.findById(issueId)
                 .orElseThrow(() -> new ResourceNotFoundException(ISSUE_NOT_FOUND_MSG + issueId));
 
@@ -74,7 +74,8 @@ public class IssueService {
             issue.setLabels(new HashSet<>(labels));
         }
 
-        return issueRepository.save(issue);
+        Issue savedIssue = issueRepository.save(issue);
+        return issueMapper.toDto(savedIssue);
     }
 
     public void checkModificationPermissions(Issue issue, User requester) {
@@ -106,7 +107,7 @@ public class IssueService {
     }
 
     @Transactional
-    public Issue promoteIssue(Long issueId, User requester) {
+    public IssueResponseDto promoteIssue(Long issueId, User requester) {
         Issue issue = issueRepository.findById(issueId)
                 .orElseThrow(() -> new ResourceNotFoundException(ISSUE_NOT_FOUND_MSG + issueId));
 
@@ -125,11 +126,12 @@ public class IssueService {
         // Se passa il controllo (o se è nello stato iniziale, non ci sono vincoli per la promozione)
         issue.promote();
 
-        return issueRepository.save(issue);
+        Issue savedIssue = issueRepository.save(issue);
+        return issueMapper.toDto(savedIssue);
     }
 
     @Transactional
-    public Issue demoteIssue(Long issueId, User requester) {
+    public IssueResponseDto demoteIssue(Long issueId, User requester) {
         Issue issue = issueRepository.findById(issueId)
                 .orElseThrow(() -> new ResourceNotFoundException(ISSUE_NOT_FOUND_MSG + issueId));
 
@@ -147,7 +149,8 @@ public class IssueService {
 
         issue.demote();
 
-        return issueRepository.save(issue);
+        Issue savedIssue = issueRepository.save(issue);
+        return issueMapper.toDto(savedIssue);
     }
 
     @Transactional
@@ -204,5 +207,49 @@ public class IssueService {
                 .stream()
                 .map(issueMapper::toDto)
                 .toList();
+    }
+
+    @Transactional
+    public IssueResponseDto addLabelToIssue(Long issueId, Long labelId, User requester) {
+        Issue issue = issueRepository.findById(issueId)
+                .orElseThrow(() -> new ResourceNotFoundException(ISSUE_NOT_FOUND_MSG + issueId));
+        Label label = labelRepository.findById(labelId)
+                .orElseThrow(() -> new ResourceNotFoundException("Label not found with id: " + labelId));
+
+        checkModificationPermissions(issue, requester);
+
+        issue.getLabels().add(label);
+        Issue savedIssue = issueRepository.save(issue);
+        return issueMapper.toDto(savedIssue);
+    }
+
+    @Transactional
+    public IssueResponseDto removeLabelFromIssue(Long issueId, Long labelId, User requester) {
+        Issue issue = issueRepository.findById(issueId)
+                .orElseThrow(() -> new ResourceNotFoundException(ISSUE_NOT_FOUND_MSG + issueId));
+        Label label = labelRepository.findById(labelId)
+                .orElseThrow(() -> new ResourceNotFoundException("Label not found with id: " + labelId));
+
+        checkModificationPermissions(issue, requester);
+
+        issue.getLabels().remove(label);
+        Issue savedIssue = issueRepository.save(issue);
+        return issueMapper.toDto(savedIssue);
+    }
+
+    @Transactional
+    public IssueResponseDto setIssueLabels(Long issueId, Set<Long> labelIds, User requester) {
+        Issue issue = issueRepository.findById(issueId)
+                .orElseThrow(() -> new ResourceNotFoundException(ISSUE_NOT_FOUND_MSG + issueId));
+
+        checkModificationPermissions(issue, requester);
+
+        Set<Label> newLabels = new HashSet<>();
+        if (labelIds != null && !labelIds.isEmpty()) {
+            newLabels.addAll(labelRepository.findAllById(labelIds));
+        }
+        issue.setLabels(newLabels);
+        Issue savedIssue = issueRepository.save(issue);
+        return issueMapper.toDto(savedIssue);
     }
 }

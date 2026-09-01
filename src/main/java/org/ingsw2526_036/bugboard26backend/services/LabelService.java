@@ -1,8 +1,6 @@
 package org.ingsw2526_036.bugboard26backend.services;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import org.ingsw2526_036.bugboard26backend.dtos.LabelRequestDto;
 import org.ingsw2526_036.bugboard26backend.entities.Administrator;
@@ -22,11 +20,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class LabelService {
 
-    private static final String ISSUE_NOT_FOUND_MSG = "Issue not found with id: ";
-
     private final LabelRepository labelRepository;
     private final IssueRepository issueRepository;
-    private final IssueService issueService;
 
     @Transactional
     public Label createLabel(LabelRequestDto dto) {
@@ -77,44 +72,5 @@ public class LabelService {
             issueRepository.save(issue);
         }
         labelRepository.delete(label);
-    }
-
-    @Transactional
-    public Issue addLabelToIssue(Long issueId, Long labelId, User requester) {
-        Issue issue = issueRepository.findById(issueId)
-                .orElseThrow(() -> new ResourceNotFoundException(ISSUE_NOT_FOUND_MSG + issueId));
-        Label label = getLabelById(labelId);
-
-        issueService.checkModificationPermissions(issue, requester);
-
-        issue.getLabels().add(label);
-        return issueRepository.save(issue);
-    }
-
-    @Transactional
-    public Issue removeLabelFromIssue(Long issueId, Long labelId, User requester) {
-        Issue issue = issueRepository.findById(issueId)
-                .orElseThrow(() -> new ResourceNotFoundException(ISSUE_NOT_FOUND_MSG + issueId));
-        Label label = getLabelById(labelId);
-
-        issueService.checkModificationPermissions(issue, requester);
-
-        issue.getLabels().remove(label);
-        return issueRepository.save(issue);
-    }
-
-    @Transactional
-    public Issue setIssueLabels(Long issueId, Set<Long> labelIds, User requester) {
-        Issue issue = issueRepository.findById(issueId)
-                .orElseThrow(() -> new ResourceNotFoundException(ISSUE_NOT_FOUND_MSG + issueId));
-
-        issueService.checkModificationPermissions(issue, requester);
-
-        Set<Label> newLabels = new HashSet<>();
-        if (labelIds != null && !labelIds.isEmpty()) {
-            newLabels.addAll(labelRepository.findAllById(labelIds));
-        }
-        issue.setLabels(newLabels);
-        return issueRepository.save(issue);
     }
 }

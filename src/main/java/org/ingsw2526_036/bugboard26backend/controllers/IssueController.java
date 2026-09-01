@@ -13,7 +13,6 @@ import org.ingsw2526_036.bugboard26backend.enums.StateEnum;
 import org.ingsw2526_036.bugboard26backend.enums.TypeEnum;
 import org.ingsw2526_036.bugboard26backend.mappers.IssueMapper;
 import org.ingsw2526_036.bugboard26backend.services.IssueService;
-import org.ingsw2526_036.bugboard26backend.services.LabelService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -40,7 +39,6 @@ import lombok.NonNull;
 public class IssueController {
 
     private final IssueService issueService;
-    private final LabelService labelService;
     private final IssueMapper issueMapper;
 
     //Endpoint: POST /api/projects/{projectId}/issues/createissue
@@ -73,27 +71,24 @@ public class IssueController {
     public ResponseEntity<IssueResponseDto> updateIssue(@PathVariable Long issueId,
                                                         @Valid @RequestBody IssueRequestDto dto,
                                                         @AuthenticationPrincipal User requester) {
-        // Passiamo il requester al service per i controlli
-        Issue updatedIssue = issueService.modifyIssue(issueId, dto, requester);
-        return ResponseEntity.ok(issueMapper.toDto(updatedIssue));
+        IssueResponseDto responseDto = issueService.updateIssue(issueId, dto, requester);
+        return ResponseEntity.ok(responseDto);
     }
 
     //Endpoint PATCH /api/projects/{projectId}/issues/{issueId}/promote.
     @PatchMapping("/{issueId}/promote")
     public ResponseEntity<IssueResponseDto> promoteIssue(@PathVariable Long issueId,
                                                          @AuthenticationPrincipal User requester) {
-        // Passiamo il requester
-        Issue updatedIssue = issueService.promoteIssue(issueId, requester);
-        return ResponseEntity.ok(issueMapper.toDto(updatedIssue));
+        IssueResponseDto responseDto = issueService.promoteIssue(issueId, requester);
+        return ResponseEntity.ok(responseDto);
     }
 
     //Endpoint PATCH /api/projects/{projectId}/issues/{issueId}/demote.
     @PatchMapping("/{issueId}/demote")
     public ResponseEntity<IssueResponseDto> demoteIssue(@PathVariable Long issueId,
                                                         @AuthenticationPrincipal User requester) {
-        // Passiamo il requester
-        Issue updatedIssue = issueService.demoteIssue(issueId, requester);
-        return ResponseEntity.ok(issueMapper.toDto(updatedIssue));
+        IssueResponseDto responseDto = issueService.demoteIssue(issueId, requester);
+        return ResponseEntity.ok(responseDto);
     }
 
     @PatchMapping("/{issueId}/assign/{userId}")
@@ -108,23 +103,23 @@ public class IssueController {
     public ResponseEntity<IssueResponseDto> addLabelToIssue(@PathVariable Long issueId,
                                                             @PathVariable Long labelId,
                                                             @AuthenticationPrincipal User requester) {
-        Issue updatedIssue = labelService.addLabelToIssue(issueId, labelId, requester);
-        return ResponseEntity.ok(issueMapper.toDto(updatedIssue));
+        IssueResponseDto responseDto = issueService.addLabelToIssue(issueId, labelId, requester);
+        return ResponseEntity.ok(responseDto);
     }
 
     @DeleteMapping("/{issueId}/labels/{labelId}")
     public ResponseEntity<IssueResponseDto> removeLabelFromIssue(@PathVariable Long issueId,
                                                                  @PathVariable Long labelId,
                                                                  @AuthenticationPrincipal User requester) {
-        Issue updatedIssue = labelService.removeLabelFromIssue(issueId, labelId, requester);
-        return ResponseEntity.ok(issueMapper.toDto(updatedIssue));
+        IssueResponseDto responseDto = issueService.removeLabelFromIssue(issueId, labelId, requester);
+        return ResponseEntity.ok(responseDto);
     }
 
     @PutMapping("/{issueId}/labels")
     public ResponseEntity<IssueResponseDto> setIssueLabels(@PathVariable Long issueId,
                                                            @RequestBody Set<Long> labelIds,
                                                            @AuthenticationPrincipal User requester) {
-        Issue updatedIssue = labelService.setIssueLabels(issueId, labelIds, requester);
-        return ResponseEntity.ok(issueMapper.toDto(updatedIssue));
+        IssueResponseDto responseDto = issueService.setIssueLabels(issueId, labelIds, requester);
+        return ResponseEntity.ok(responseDto);
     }
 }
