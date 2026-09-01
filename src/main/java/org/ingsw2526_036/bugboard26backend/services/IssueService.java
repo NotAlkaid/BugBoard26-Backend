@@ -7,6 +7,7 @@ import org.ingsw2526_036.bugboard26backend.mappers.IssueMapper;
 import lombok.RequiredArgsConstructor;
 import org.ingsw2526_036.bugboard26backend.dtos.IssueFilterDto;
 import org.ingsw2526_036.bugboard26backend.dtos.IssueRequestDto;
+import org.ingsw2526_036.bugboard26backend.dtos.IssueResponseDto;
 import org.ingsw2526_036.bugboard26backend.entities.Administrator;
 import org.ingsw2526_036.bugboard26backend.entities.Issue;
 import org.ingsw2526_036.bugboard26backend.entities.Project;
@@ -177,14 +178,16 @@ public class IssueService {
         return issueRepository.save(issue);
     }
 
+    @Transactional
     public List<Issue> findAll() {
         return issueRepository.findAll();
     }
 
-    public List<Issue> getIssues(Long projectId,
-                                 IssueFilterDto filter,
-                                 String sortBy,
-                                 String sortDir) {
+    @Transactional
+    public List<IssueResponseDto> getIssues(Long projectId,
+                                            IssueFilterDto filter,
+                                            String sortBy,
+                                            String sortDir) {
         if (!projectRepository.existsById(projectId)) {
             throw new ResourceNotFoundException("Project not found with id: " + projectId);
         }
@@ -196,6 +199,9 @@ public class IssueService {
 
         Sort sort = Sort.by(direction, property);
 
-        return issueRepository.findAll(spec, sort);
+        return issueRepository.findAll(spec, sort)
+                .stream()
+                .map(issueMapper::toDto)
+                .toList();
     }
 }

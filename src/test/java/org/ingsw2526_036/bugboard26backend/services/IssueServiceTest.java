@@ -2,6 +2,7 @@ package org.ingsw2526_036.bugboard26backend.services;
 
 import org.ingsw2526_036.bugboard26backend.dtos.IssueFilterDto;
 import org.ingsw2526_036.bugboard26backend.dtos.IssueRequestDto;
+import org.ingsw2526_036.bugboard26backend.dtos.IssueResponseDto;
 import org.ingsw2526_036.bugboard26backend.entities.Administrator;
 import org.ingsw2526_036.bugboard26backend.entities.BaseUser;
 import org.ingsw2526_036.bugboard26backend.entities.Issue;
@@ -126,12 +127,18 @@ class IssueServiceTest {
             when(issueRepository.findAll(ArgumentMatchers.<Specification<Issue>>any(), any(Sort.class)))
                     .thenReturn(List.of(issue));
 
-            List<Issue> result = issueService.getIssues(projectId, null, null, null);
+            IssueResponseDto dto = new IssueResponseDto();
+            dto.setId(10L);
+            dto.setTitle("Bug 1");
+            when(issueMapper.toDto(issue)).thenReturn(dto);
+
+            List<IssueResponseDto> result = issueService.getIssues(projectId, null, null, null);
 
             assertNotNull(result);
             assertEquals(1, result.size());
             assertEquals("Bug 1", result.get(0).getTitle());
             verify(issueRepository, times(1)).findAll(ArgumentMatchers.<Specification<Issue>>any(), any(Sort.class));
+            verify(issueMapper, times(1)).toDto(issue);
         }
 
         @Test
@@ -145,11 +152,17 @@ class IssueServiceTest {
             when(issueRepository.findAll(ArgumentMatchers.<Specification<Issue>>any(), any(Sort.class)))
                     .thenReturn(List.of(issue));
 
-            List<Issue> result = issueService.getIssues(projectId, null, "priority", "asc");
+            IssueResponseDto dto = new IssueResponseDto();
+            dto.setId(10L);
+            dto.setTitle("Bug 1");
+            when(issueMapper.toDto(issue)).thenReturn(dto);
+
+            List<IssueResponseDto> result = issueService.getIssues(projectId, null, "priority", "asc");
 
             assertNotNull(result);
             assertEquals(1, result.size());
             verify(issueRepository, times(1)).findAll(ArgumentMatchers.<Specification<Issue>>any(), any(Sort.class));
+            verify(issueMapper, times(1)).toDto(issue);
         }
 
         @Test
@@ -160,7 +173,7 @@ class IssueServiceTest {
             when(issueRepository.findAll(ArgumentMatchers.<Specification<Issue>>any(), any(Sort.class)))
                     .thenReturn(Collections.emptyList());
 
-            List<Issue> result = issueService.getIssues(projectId, null, "title", "ASC");
+            List<IssueResponseDto> result = issueService.getIssues(projectId, null, "title", "ASC");
 
             assertNotNull(result);
             assertTrue(result.isEmpty());
@@ -175,7 +188,7 @@ class IssueServiceTest {
             when(issueRepository.findAll(ArgumentMatchers.<Specification<Issue>>any(), any(Sort.class)))
                     .thenReturn(Collections.emptyList());
 
-            List<Issue> result = issueService.getIssues(projectId, null, "nonExistingField", "desc");
+            List<IssueResponseDto> result = issueService.getIssues(projectId, null, "nonExistingField", "desc");
 
             assertNotNull(result);
             assertTrue(result.isEmpty());
@@ -198,7 +211,7 @@ class IssueServiceTest {
             when(issueRepository.findAll(ArgumentMatchers.<Specification<Issue>>any(), any(Sort.class)))
                     .thenReturn(Collections.emptyList());
 
-            List<Issue> result = issueService.getIssues(projectId, filter, "state", "desc");
+            List<IssueResponseDto> result = issueService.getIssues(projectId, filter, "state", "desc");
 
             assertNotNull(result);
             assertTrue(result.isEmpty());

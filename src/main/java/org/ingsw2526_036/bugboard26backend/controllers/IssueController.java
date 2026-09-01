@@ -64,11 +64,7 @@ public class IssueController {
             @RequestParam(defaultValue = "creationDate") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir) {
         IssueFilterDto filter = new IssueFilterDto(type, state, priority, assignedToId, labelId);
-        List<Issue> issues = issueService.getIssues(projectId, filter, sortBy, sortDir);
-        List<IssueResponseDto> dtoIssues = issues
-                .stream()
-                .map(issueMapper::toDto)
-                .toList();
+        List<IssueResponseDto> dtoIssues = issueService.getIssues(projectId, filter, sortBy, sortDir);
         return ResponseEntity.ok(dtoIssues);
     }
 
