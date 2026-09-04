@@ -218,6 +218,10 @@ public class IssueService {
 
         checkModificationPermissions(issue, requester);
 
+        if (issue.getLabels().size() >= 10 && !issue.getLabels().contains(label)) {
+            throw new IllegalArgumentException("An issue cannot have more than 10 labels.");
+        }
+
         issue.getLabels().add(label);
         Issue savedIssue = issueRepository.save(issue);
         return issueMapper.toDto(savedIssue);
@@ -243,6 +247,10 @@ public class IssueService {
                 .orElseThrow(() -> new ResourceNotFoundException(ISSUE_NOT_FOUND_MSG + issueId));
 
         checkModificationPermissions(issue, requester);
+
+        if (labelIds != null && labelIds.size() > 10) {
+            throw new IllegalArgumentException("An issue cannot have more than 10 labels.");
+        }
 
         Set<Label> newLabels = new HashSet<>();
         if (labelIds != null && !labelIds.isEmpty()) {
