@@ -9,5 +9,6 @@ public record IssueFilterDto(
         StateEnum state,
         PriorityEnum priority,
         Long assignedToId,
-        Long labelId
+        Long labelId,
+        String search
 ) {}

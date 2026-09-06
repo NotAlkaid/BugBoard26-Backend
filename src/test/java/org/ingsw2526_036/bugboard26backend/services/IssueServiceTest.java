@@ -26,7 +26,10 @@ import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.AccessDeniedException;
 
@@ -96,6 +99,32 @@ class IssueServiceTest {
     }
 
 
+    /**
+     * Test per il metodo getIssues(Long projectId, IssueFilterDto filter, Pageable pageable)
+     *
+     * Strategia di Test: R-WECT (Robust Weak Equivalence Class Testing)
+     *
+     * 1. Analisi delle Classi di Equivalenza (CE) sui parametri di input:
+     *    1) projectId (Long):
+     *       - [V_proj]   ID progetto esistente nel DB.
+     *       - [NV_proj]  ID progetto non presente nel DB -> lancia ResourceNotFoundException.
+     *    2) filter (IssueFilterDto):
+     *       - [V1_filter] DTO nullo (nessun filtro specificato).
+     *       - [V2_filter] DTO popolato con filtri validi (type, state, priority, assignee, label, search).
+     *    3) pageable (Pageable):
+     *       - [V_pageable] Istanza Pageable valida fornita dal Controller (es. PageRequest.of(0, 6)).
+     *
+     * 2. Classi di Equivalenza effettivamente coperte nel Service (1 NV, 4 V):
+     *    - projectId : [V_proj], [NV_proj]
+     *    - filter    : [V1_filter], [V2_filter] (Max classi V = 2)
+     *    - pageable  : [V_pageable]
+     *    => Formula R-WECT : 1 (NV) + max(1, 2, 1) (V) = 3 Test
+     *
+     * 3. Casi di test implementati (R-WECT / Single Fault Assumption):
+     *    - Test 1 [NV_proj + V1_filter + V_pageable] : Progetto non trovato -> getIssues_projectNotFound_throwsResourceNotFoundException
+     *    - Test 2 [V_proj + V1_filter + V_pageable]  : Progetto valido, filtri nulli -> getIssues_validProject_nullFilter_returnsIssues
+     *    - Test 3 [V_proj + V2_filter + V_pageable]  : Progetto valido, filtri completi -> getIssues_validProject_withCompleteFilter_returnsFilteredIssues
+     */
     @Nested
     @DisplayName("Test per il metodo getIssues")
     class GetIssuesTests {
@@ -104,11 +133,12 @@ class IssueServiceTest {
         @DisplayName("getIssues lancia ResourceNotFoundException se il progetto non esiste")
         void getIssues_projectNotFound_throwsResourceNotFoundException() {
             Long projectId = 999L;
+            Pageable pageable = PageRequest.of(0, 6);
             when(projectRepository.existsById(projectId)).thenReturn(false);
 
             ResourceNotFoundException exception = assertThrows(
                     ResourceNotFoundException.class,
-                    () -> issueService.getIssues(projectId, null, null, null)
+                    () -> issueService.getIssues(projectId, null, pageable)
             );
 
             assertEquals("Project not found with id: " + projectId, exception.getMessage());
@@ -117,106 +147,55 @@ class IssueServiceTest {
         }
 
         @Test
-        @DisplayName("getIssues usa ordinamento di default (DESC, creationDate) con parametri null")
-        void getIssues_validProject_defaultSortingAndNullFilter_returnsIssues() {
+        @DisplayName("getIssues ritorna le issue con filtro nullo e pageable valido")
+        void getIssues_validProject_nullFilter_returnsIssues() {
             Long projectId = 1L;
+            Pageable pageable = PageRequest.of(0, 6);
             when(projectRepository.existsById(projectId)).thenReturn(true);
 
             Issue issue = new Issue(10L, "Bug 1", "Desc", new Date(System.currentTimeMillis()),
                     PriorityEnum.HIGH, StateEnum.TODO, TypeEnum.BUG, creatorUser, sampleProject);
-            when(issueRepository.findAll(ArgumentMatchers.<Specification<Issue>>any(), any(Sort.class)))
-                    .thenReturn(List.of(issue));
+            when(issueRepository.findAll(ArgumentMatchers.<Specification<Issue>>any(), eq(pageable)))
+                    .thenReturn(new PageImpl<>(List.of(issue)));
 
             IssueResponseDto dto = new IssueResponseDto();
             dto.setId(10L);
             dto.setTitle("Bug 1");
             when(issueMapper.toDto(issue)).thenReturn(dto);
 
-            List<IssueResponseDto> result = issueService.getIssues(projectId, null, null, null);
+            Page<IssueResponseDto> result = issueService.getIssues(projectId, null, pageable);
 
             assertNotNull(result);
-            assertEquals(1, result.size());
-            assertEquals("Bug 1", result.get(0).getTitle());
-            verify(issueRepository, times(1)).findAll(ArgumentMatchers.<Specification<Issue>>any(), any(Sort.class));
+            assertEquals(1, result.getTotalElements());
+            assertEquals("Bug 1", result.getContent().get(0).getTitle());
+            verify(issueRepository, times(1)).findAll(ArgumentMatchers.<Specification<Issue>>any(), eq(pageable));
             verify(issueMapper, times(1)).toDto(issue);
-        }
-
-        @Test
-        @DisplayName("getIssues applica ordinamento ASC con proprietà consentita ('priority')")
-        void getIssues_validProject_customAscSortWithAllowedProperty_returnsIssues() {
-            Long projectId = 1L;
-            when(projectRepository.existsById(projectId)).thenReturn(true);
-
-            Issue issue = new Issue(10L, "Bug 1", "Desc", new Date(System.currentTimeMillis()),
-                    PriorityEnum.HIGH, StateEnum.TODO, TypeEnum.BUG, creatorUser, sampleProject);
-            when(issueRepository.findAll(ArgumentMatchers.<Specification<Issue>>any(), any(Sort.class)))
-                    .thenReturn(List.of(issue));
-
-            IssueResponseDto dto = new IssueResponseDto();
-            dto.setId(10L);
-            dto.setTitle("Bug 1");
-            when(issueMapper.toDto(issue)).thenReturn(dto);
-
-            List<IssueResponseDto> result = issueService.getIssues(projectId, null, "priority", "asc");
-
-            assertNotNull(result);
-            assertEquals(1, result.size());
-            verify(issueRepository, times(1)).findAll(ArgumentMatchers.<Specification<Issue>>any(), any(Sort.class));
-            verify(issueMapper, times(1)).toDto(issue);
-        }
-
-        @Test
-        @DisplayName("getIssues gestisce sortDir case-insensitive ('ASC')")
-        void getIssues_validProject_caseInsensitiveAscSort_returnsAscDirection() {
-            Long projectId = 1L;
-            when(projectRepository.existsById(projectId)).thenReturn(true);
-            when(issueRepository.findAll(ArgumentMatchers.<Specification<Issue>>any(), any(Sort.class)))
-                    .thenReturn(Collections.emptyList());
-
-            List<IssueResponseDto> result = issueService.getIssues(projectId, null, "title", "ASC");
-
-            assertNotNull(result);
-            assertTrue(result.isEmpty());
-            verify(issueRepository, times(1)).findAll(ArgumentMatchers.<Specification<Issue>>any(), any(Sort.class));
-        }
-
-        @Test
-        @DisplayName("getIssues effettua fallback su 'creationDate' se la proprietà di sort non è in whitelist")
-        void getIssues_validProject_invalidSortProperty_fallsBackToCreationDate() {
-            Long projectId = 1L;
-            when(projectRepository.existsById(projectId)).thenReturn(true);
-            when(issueRepository.findAll(ArgumentMatchers.<Specification<Issue>>any(), any(Sort.class)))
-                    .thenReturn(Collections.emptyList());
-
-            List<IssueResponseDto> result = issueService.getIssues(projectId, null, "nonExistingField", "desc");
-
-            assertNotNull(result);
-            assertTrue(result.isEmpty());
-            verify(issueRepository, times(1)).findAll(ArgumentMatchers.<Specification<Issue>>any(), any(Sort.class));
         }
 
         @Test
         @DisplayName("getIssues con filtri completi interroga correttamente il repository")
         void getIssues_validProject_withCompleteFilter_returnsFilteredIssues() {
             Long projectId = 1L;
+            Pageable pageable = PageRequest.of(0, 6);
             IssueFilterDto filter = new IssueFilterDto(
                     TypeEnum.BUG,
                     StateEnum.TODO,
                     PriorityEnum.HIGH,
                     2L,
-                    5L
+                    5L,
+                    "search term"
             );
 
             when(projectRepository.existsById(projectId)).thenReturn(true);
-            when(issueRepository.findAll(ArgumentMatchers.<Specification<Issue>>any(), any(Sort.class)))
-                    .thenReturn(Collections.emptyList());
+            when(issueRepository.findAll(ArgumentMatchers.<Specification<Issue>>any(), eq(pageable)))
+                    .thenReturn(new PageImpl<>(Collections.emptyList()));
 
-            List<IssueResponseDto> result = issueService.getIssues(projectId, filter, "state", "desc");
+            Page<IssueResponseDto> result = issueService.getIssues(projectId, filter, pageable);
 
             assertNotNull(result);
             assertTrue(result.isEmpty());
             verify(projectRepository, times(1)).existsById(projectId);
-            verify(issueRepository, times(1)).findAll(ArgumentMatchers.<Specification<Issue>>any(), any(Sort.class));
+            verify(issueRepository, times(1)).findAll(ArgumentMatchers.<Specification<Issue>>any(), eq(pageable));
         }
     }
 

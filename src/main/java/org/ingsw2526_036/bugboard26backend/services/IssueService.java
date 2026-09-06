@@ -13,11 +13,14 @@ import org.ingsw2526_036.bugboard26backend.entities.Issue;
 import org.ingsw2526_036.bugboard26backend.entities.Project;
 import org.ingsw2526_036.bugboard26backend.entities.User;
 import org.ingsw2526_036.bugboard26backend.enums.StateEnum;
+import org.ingsw2526_036.bugboard26backend.enums.TypeEnum;
+import org.ingsw2526_036.bugboard26backend.dtos.IssueSummaryDto;
 import org.ingsw2526_036.bugboard26backend.exception.ResourceNotFoundException;
 import org.ingsw2526_036.bugboard26backend.repositories.LabelRepository;
 import org.ingsw2526_036.bugboard26backend.repositories.UserRepository;
 import org.ingsw2526_036.bugboard26backend.specifications.IssueSpecification;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.AccessDeniedException;
 import jakarta.transaction.Transactional;
@@ -30,9 +33,7 @@ import org.ingsw2526_036.bugboard26backend.entities.Label;
 @Service
 @RequiredArgsConstructor
 public class IssueService {
-    private static final Set<String> ALLOWED_SORT_PROPERTIES = Set.of(
-            "id", "title", "description", "creationDate", "priority", "state", "type"
-    );
+
 
     private static final String ISSUE_NOT_FOUND_MSG = "Issue not found with id: ";
 
@@ -188,25 +189,29 @@ public class IssueService {
     }
 
     @Transactional
-    public List<IssueResponseDto> getIssues(Long projectId,
+    public Page<IssueResponseDto> getIssues(Long projectId,
                                             IssueFilterDto filter,
-                                            String sortBy,
-                                            String sortDir) {
+                                            Pageable pageable) {
         if (!projectRepository.existsById(projectId)) {
             throw new ResourceNotFoundException("Project not found with id: " + projectId);
         }
 
         Specification<Issue> spec = IssueSpecification.withFilters(projectId, filter);
 
-        Sort.Direction direction = "asc".equalsIgnoreCase(sortDir) ? Sort.Direction.ASC : Sort.Direction.DESC;
-        String property = (sortBy != null && ALLOWED_SORT_PROPERTIES.contains(sortBy)) ? sortBy : "creationDate";
+        return issueRepository.findAll(spec, pageable)
+                .map(issueMapper::toDto);
+    }
 
-        Sort sort = Sort.by(direction, property);
-
-        return issueRepository.findAll(spec, sort)
-                .stream()
-                .map(issueMapper::toDto)
-                .toList();
+    @Transactional
+    public IssueSummaryDto getIssueSummary(Long projectId) {
+        if (!projectRepository.existsById(projectId)) {
+            throw new ResourceNotFoundException("Project not found with id: " + projectId);
+        }
+        long total = issueRepository.countByProjectId(projectId);
+        long open = issueRepository.countByProjectIdAndStateIn(projectId, List.of(StateEnum.TODO, StateEnum.INPROGRESS));
+        long bugs = issueRepository.countByProjectIdAndType(projectId, TypeEnum.BUG);
+        long closed = issueRepository.countByProjectIdAndState(projectId, StateEnum.CLOSED);
+        return new IssueSummaryDto(total, open, bugs, closed);
     }
 
     @Transactional

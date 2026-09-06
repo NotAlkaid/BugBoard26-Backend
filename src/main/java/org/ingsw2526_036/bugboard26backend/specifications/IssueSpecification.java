@@ -64,5 +64,11 @@ public class IssueSpecification {
             Join<Issue, Label> labelJoin = root.join("labels");
             predicates.add(cb.equal(labelJoin.get("id"), filter.labelId()));
         }
+        if (filter.search() != null && !filter.search().isBlank()) {
+            String pattern = "%" + filter.search().toLowerCase().trim() + "%";
+            Predicate titleMatch = cb.like(cb.lower(root.get("title")), pattern);
+            Predicate descMatch = cb.like(cb.lower(root.get("description")), pattern);
+            predicates.add(cb.or(titleMatch, descMatch));
+        }
     }
 }

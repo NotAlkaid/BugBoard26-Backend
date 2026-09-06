@@ -1,11 +1,16 @@
 package org.ingsw2526_036.bugboard26backend.controllers;
 
-import java.util.List;
 import java.util.Set;
 
 import org.ingsw2526_036.bugboard26backend.dtos.IssueFilterDto;
 import org.ingsw2526_036.bugboard26backend.dtos.IssueRequestDto;
 import org.ingsw2526_036.bugboard26backend.dtos.IssueResponseDto;
+import org.ingsw2526_036.bugboard26backend.dtos.IssueSummaryDto;
+import org.ingsw2526_036.bugboard26backend.dtos.PageResponseDto;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.ingsw2526_036.bugboard26backend.entities.Issue;
 import org.ingsw2526_036.bugboard26backend.entities.User;
 import org.ingsw2526_036.bugboard26backend.enums.PriorityEnum;
@@ -38,6 +43,10 @@ import lombok.NonNull;
 @Validated
 public class IssueController {
 
+    private static final Set<String> ALLOWED_SORT_PROPERTIES = Set.of(
+            "id", "title", "description", "creationDate", "priority", "state", "type"
+    );
+
     private final IssueService issueService;
     private final IssueMapper issueMapper;
 
@@ -52,18 +61,35 @@ public class IssueController {
 
     // Endpoint: GET /api/projects/{projectId}/issues e /getissues
     @GetMapping({"", "/getissues"})
-    public ResponseEntity<@NonNull List<IssueResponseDto>> getIssues(
+    public ResponseEntity<@NonNull PageResponseDto<IssueResponseDto>> getIssues(
             @PathVariable Long projectId,
             @RequestParam(required = false) TypeEnum type,
             @RequestParam(required = false) StateEnum state,
             @RequestParam(required = false) PriorityEnum priority,
             @RequestParam(required = false) Long assignedToId,
             @RequestParam(required = false) Long labelId,
+            @RequestParam(required = false) String search,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "6") int size,
             @RequestParam(defaultValue = "creationDate") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir) {
-        IssueFilterDto filter = new IssueFilterDto(type, state, priority, assignedToId, labelId);
-        List<IssueResponseDto> dtoIssues = issueService.getIssues(projectId, filter, sortBy, sortDir);
-        return ResponseEntity.ok(dtoIssues);
+
+        Sort.Direction direction = "asc".equalsIgnoreCase(sortDir) ? Sort.Direction.ASC : Sort.Direction.DESC;
+        String property = (sortBy != null && ALLOWED_SORT_PROPERTIES.contains(sortBy)) ? sortBy : "creationDate";
+        int safePage = Math.max(0, page);
+        int safeSize = Math.clamp(size, 1, 100);
+        Pageable pageable = PageRequest.of(safePage, safeSize, Sort.by(direction, property));
+
+        IssueFilterDto filter = new IssueFilterDto(type, state, priority, assignedToId, labelId, search);
+        Page<IssueResponseDto> dtoPage = issueService.getIssues(projectId, filter, pageable);
+        return ResponseEntity.ok(PageResponseDto.from(dtoPage));
+    }
+
+    // Endpoint: GET /api/projects/{projectId}/issues/summary
+    @GetMapping("/summary")
+    public ResponseEntity<@NonNull IssueSummaryDto> getIssueSummary(@PathVariable Long projectId) {
+        IssueSummaryDto summary = issueService.getIssueSummary(projectId);
+        return ResponseEntity.ok(summary);
     }
 
     //Endpoint PUT /api/projects/{projectId}/issues/{issueId}.
