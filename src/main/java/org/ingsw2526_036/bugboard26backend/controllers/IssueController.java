@@ -92,6 +92,14 @@ public class IssueController {
         return ResponseEntity.ok(summary);
     }
 
+    //Endpoint GET /api/projects/{projectId}/issues/{issueId}.
+    @GetMapping("/{issueId}")
+    public ResponseEntity<@NonNull IssueResponseDto> getIssueById(@PathVariable Long projectId,
+                                                                  @PathVariable Long issueId) {
+        IssueResponseDto responseDto = issueService.getIssueById(projectId, issueId);
+        return ResponseEntity.ok(responseDto);
+    }
+
     //Endpoint PUT /api/projects/{projectId}/issues/{issueId}.
     @PutMapping("/{issueId}")
     public ResponseEntity<IssueResponseDto> updateIssue(@PathVariable Long issueId,

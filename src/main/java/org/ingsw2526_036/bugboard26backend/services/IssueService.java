@@ -203,6 +203,21 @@ public class IssueService {
     }
 
     @Transactional
+    public IssueResponseDto getIssueById(Long projectId, Long issueId) {
+        if (!projectRepository.existsById(projectId)) {
+            throw new ResourceNotFoundException("Project not found with id: " + projectId);
+        }
+        Issue issue = issueRepository.findById(issueId)
+                .orElseThrow(() -> new ResourceNotFoundException(ISSUE_NOT_FOUND_MSG + issueId));
+
+        if (!issue.getProject().getId().equals(projectId)) {
+            throw new ResourceNotFoundException("Issue with id " + issueId + " does not belong to project " + projectId);
+        }
+
+        return issueMapper.toDto(issue);
+    }
+
+    @Transactional
     public IssueSummaryDto getIssueSummary(Long projectId) {
         if (!projectRepository.existsById(projectId)) {
             throw new ResourceNotFoundException("Project not found with id: " + projectId);
