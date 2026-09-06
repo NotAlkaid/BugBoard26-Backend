@@ -8,13 +8,14 @@ import lombok.RequiredArgsConstructor;
 import org.ingsw2526_036.bugboard26backend.dtos.IssueFilterDto;
 import org.ingsw2526_036.bugboard26backend.dtos.IssueRequestDto;
 import org.ingsw2526_036.bugboard26backend.dtos.IssueResponseDto;
+import org.ingsw2526_036.bugboard26backend.dtos.IssueSummaryDto;
 import org.ingsw2526_036.bugboard26backend.entities.Administrator;
 import org.ingsw2526_036.bugboard26backend.entities.Issue;
+import org.ingsw2526_036.bugboard26backend.entities.Label;
 import org.ingsw2526_036.bugboard26backend.entities.Project;
 import org.ingsw2526_036.bugboard26backend.entities.User;
 import org.ingsw2526_036.bugboard26backend.enums.StateEnum;
 import org.ingsw2526_036.bugboard26backend.enums.TypeEnum;
-import org.ingsw2526_036.bugboard26backend.dtos.IssueSummaryDto;
 import org.ingsw2526_036.bugboard26backend.exception.ResourceNotFoundException;
 import org.ingsw2526_036.bugboard26backend.repositories.LabelRepository;
 import org.ingsw2526_036.bugboard26backend.repositories.UserRepository;
@@ -28,12 +29,10 @@ import jakarta.transaction.Transactional;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import org.ingsw2526_036.bugboard26backend.entities.Label;
 
 @Service
 @RequiredArgsConstructor
 public class IssueService {
-
 
     private static final String ISSUE_NOT_FOUND_MSG = "Issue not found with id: ";
 
@@ -112,19 +111,26 @@ public class IssueService {
         Issue issue = issueRepository.findById(issueId)
                 .orElseThrow(() -> new ResourceNotFoundException(ISSUE_NOT_FOUND_MSG + issueId));
 
+        // Il passaggio da TO-DO a INPROGRESS deve avvenire esclusivamente tramite assegnazione (assignIssue)
+        if (issue.getState() == StateEnum.TODO) {
+            throw new IllegalStateException("An issue in TODO state cannot be promoted directly; it must be assigned by an administrator.");
+        }
+
         // Regola specifica: INPROGRESS -> CLOSED
         if (issue.getState() == StateEnum.INPROGRESS) {
+            // Non è possibile chiudere una issue se non è assegnata
+            if (issue.getAssignedTo() == null) {
+                throw new IllegalStateException("An issue in INPROGRESS state must have an assignee before it can be closed.");
+            }
+
             boolean isAdmin = requester instanceof Administrator;
-            // Controlla se è assegnata e se il richiedente è l'assegnatario
-            boolean isAssignee = issue.getAssignedTo() != null &&
-                    issue.getAssignedTo().getId().equals(requester.getId());
+            boolean isAssignee = issue.getAssignedTo().getId().equals(requester.getId());
 
             if (!isAssignee && !isAdmin) {
                 throw new AccessDeniedException("Solo l'assegnatario o un amministratore possono chiudere la issue.");
             }
         }
 
-        // Se passa il controllo (o se è nello stato iniziale, non ci sono vincoli per la promozione)
         issue.promote();
 
         Issue savedIssue = issueRepository.save(issue);
@@ -137,15 +143,23 @@ public class IssueService {
                 .orElseThrow(() -> new ResourceNotFoundException(ISSUE_NOT_FOUND_MSG + issueId));
 
         boolean isAdmin = requester instanceof Administrator;
-        boolean isAssignee = issue.getAssignedTo() != null &&
-                issue.getAssignedTo().getId().equals(requester.getId());
 
         if (issue.getState() == StateEnum.CLOSED && !isAdmin) {
             // Riapertura di una issue chiusa: Solo Admin
             throw new AccessDeniedException("Solo un amministratore può riaprire una issue chiusa.");
-        } else if (issue.getState() == StateEnum.INPROGRESS && !isAssignee && !isAdmin) {
-            // Retrocessione allo stato iniziale: Solo Assegnatario o Admin
-            throw new AccessDeniedException("Solo l'assegnatario o un amministratore possono retrocedere la issue a TODO.");
+        } else if (issue.getState() == StateEnum.INPROGRESS) {
+            // Retrocessione allo stato iniziale: Solo Admin
+            if (!isAdmin) {
+                throw new AccessDeniedException("Solo un amministratore può demote la issue a TODO.");
+            }
+            // Rimozione dell'assegnatario quando si torna in TO-DO
+            if (issue.getAssignedTo() != null) {
+                User oldAssignee = issue.getAssignedTo();
+                if (oldAssignee.getIssuesAssigned() != null) {
+                    oldAssignee.getIssuesAssigned().remove(issue);
+                }
+                issue.setAssignedTo(null);
+            }
         }
 
         issue.demote();
@@ -171,14 +185,28 @@ public class IssueService {
                     " is not a participant of the project with id " + issue.getProject().getId());
         }
 
+        // Se era precedentemente assegnata a qualcun altro, rimuovi la issue dalle assegnazioni del vecchio utente
+        if (issue.getAssignedTo() != null && !issue.getAssignedTo().getId().equals(assignee.getId())) {
+            User oldAssignee = issue.getAssignedTo();
+            if (oldAssignee.getIssuesAssigned() != null) {
+                oldAssignee.getIssuesAssigned().remove(issue);
+            }
+        }
+
         issue.setAssignedTo(assignee);
-        //aggiorno anche la lista delle issue assegnate all'utente
+        // Aggiorno anche la lista delle issue assegnate all'utente
         if (assignee.getIssuesAssigned() == null) {
             assignee.setIssuesAssigned(new java.util.ArrayList<>());
         }
         if (!assignee.getIssuesAssigned().contains(issue)) {
             assignee.getIssuesAssigned().add(issue);
         }
+
+        // Se la issue è in stato TO-DO, l'assegnazione la porta automaticamente in INPROGRESS
+        if (issue.getState() == StateEnum.TODO) {
+            issue.promote();
+        }
+
         Issue savedIssue = issueRepository.save(issue);
         return issueMapper.toDto(savedIssue);
     }
