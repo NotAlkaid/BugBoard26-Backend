@@ -50,8 +50,8 @@ public class IssueController {
     private final IssueService issueService;
     private final IssueMapper issueMapper;
 
-    //Endpoint: POST /api/projects/{projectId}/issues/createissue
-    @PostMapping("/createissue")
+    //Endpoint: POST /api/projects/{projectId}/issues
+    @PostMapping
     public ResponseEntity<@NonNull IssueResponseDto> createIssue(@PathVariable Long projectId,
                                                                  @Valid @RequestBody IssueRequestDto issueRequestDto,
                                                                  @AuthenticationPrincipal User creator) {
@@ -59,8 +59,8 @@ public class IssueController {
         return ResponseEntity.status(HttpStatus.CREATED).body(issueMapper.toDto(createdIssue));
     }
 
-    // Endpoint: GET /api/projects/{projectId}/issues e /getissues
-    @GetMapping({"", "/getissues"})
+    //Endpoint: GET /api/projects/{projectId}/issues
+    @GetMapping
     public ResponseEntity<@NonNull PageResponseDto<IssueResponseDto>> getIssues(
             @PathVariable Long projectId,
             @RequestParam(required = false) TypeEnum type,

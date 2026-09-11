@@ -32,18 +32,18 @@ public class CommentController {
     private final CommentService commentService;
     private final CommentMapper commentMapper;
 
-    @PostMapping({"", "/addcomment"})
+    @PostMapping
     public ResponseEntity<@NonNull CommentResponseDto> addComment(@PathVariable Long projectId,
-                                                                 @PathVariable Long issueId,
-                                                                 @Valid @RequestBody CommentRequestDto commentRequestDto,
-                                                                 @AuthenticationPrincipal User creator) {
+                                                                  @PathVariable Long issueId,
+                                                                  @Valid @RequestBody CommentRequestDto commentRequestDto,
+                                                                  @AuthenticationPrincipal User creator) {
         CommentResponseDto responseDto = commentService.addComment(projectId, issueId, commentRequestDto, creator);
         return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
     }
 
-    @GetMapping({"", "/getcomments"})
+    @GetMapping
     public ResponseEntity<@NonNull List<CommentResponseDto>> getCommentsByIssue(@PathVariable Long projectId,
-                                                                               @PathVariable Long issueId) {
+                                                                                @PathVariable Long issueId) {
         List<Comment> comments = commentService.getCommentsByIssue(projectId, issueId);
         List<CommentResponseDto> dtos = comments.stream()
                 .map(commentMapper::toDto)

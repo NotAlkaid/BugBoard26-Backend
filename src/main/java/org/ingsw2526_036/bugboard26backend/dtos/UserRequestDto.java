@@ -1,5 +1,8 @@
 package org.ingsw2526_036.bugboard26backend.dtos;
 
+import org.ingsw2526_036.bugboard26backend.enums.RoleEnum;
+
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -17,6 +20,7 @@ public class UserRequestDto {
     private String email;
     @Size(min = 8, message = "Password must be at least 8 characters long")
     private String password;
+    @Schema(implementation = RoleEnum.class)
     @Pattern(regexp = "^(?i)(ADMIN|BASEUSER)$", message = "Type must be ADMIN or BASEUSER")
     private String type;
 }
