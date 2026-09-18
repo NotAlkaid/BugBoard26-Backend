@@ -1,89 +1,106 @@
 package org.ingsw2526_036.bugboard26backend.exception;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.List;
 
-import lombok.NonNull;
+import jakarta.validation.ConstraintViolationException;
+import org.ingsw2526_036.bugboard26backend.dtos.ErrorResponseDto;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.bind.MethodArgumentNotValidException;
-import java.util.List;
-import java.util.Map;
-import jakarta.validation.ConstraintViolationException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    private static final String KEY_ERROR = "error";
-    private static final String KEY_MESSAGE = "message";
+    @ExceptionHandler(BusinessRuleException.class)
+    public ResponseEntity<ErrorResponseDto> handleBusinessRuleException(BusinessRuleException exception) {
+        ErrorResponseDto response = new ErrorResponseDto(exception.getErrorCode(), exception.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
 
     @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<@NonNull String> handleIllegalArgumentException(IllegalArgumentException exception) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(exception.getMessage());
+    public ResponseEntity<ErrorResponseDto> handleIllegalArgumentException(IllegalArgumentException exception) {
+        ErrorResponseDto response = new ErrorResponseDto(ErrorCode.BAD_REQUEST, exception.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
     @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<@NonNull String> handleResourceNotFoundException(ResourceNotFoundException exception) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(exception.getMessage());
+    public ResponseEntity<ErrorResponseDto> handleResourceNotFoundException(ResourceNotFoundException exception) {
+        ErrorResponseDto response = new ErrorResponseDto(exception.getErrorCode(), exception.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
     }
 
     @ExceptionHandler(DuplicateResourceException.class)
-    public ResponseEntity<@NonNull String> handleDuplicateResourceException(DuplicateResourceException exception) {
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(exception.getMessage());
-    }
-
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<@NonNull List<String>> handleMethodArgumentNotValidException(MethodArgumentNotValidException exception) {
-
-        List<String> listaErrori = new ArrayList<>();
-
-        for (FieldError error : exception.getBindingResult().getFieldErrors()) {
-            String messaggio = error.getField() + ": " + error.getDefaultMessage();
-            listaErrori.add(messaggio);
-        }
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(listaErrori);
+    public ResponseEntity<ErrorResponseDto> handleDuplicateResourceException(DuplicateResourceException exception) {
+        ErrorResponseDto response = new ErrorResponseDto(exception.getErrorCode(), exception.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
     }
 
     @ExceptionHandler(UsernameNotFoundException.class)
-    public ResponseEntity<@NonNull String> handleUsernameNotFoundException(UsernameNotFoundException exception) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(exception.getMessage());
+    public ResponseEntity<ErrorResponseDto> handleUsernameNotFoundException(UsernameNotFoundException exception) {
+        ErrorResponseDto response = new ErrorResponseDto(ErrorCode.USER_NOT_FOUND, exception.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorResponseDto> handleMethodArgumentNotValidException(MethodArgumentNotValidException exception) {
+        List<String> details = new ArrayList<>();
+        for (FieldError error : exception.getBindingResult().getFieldErrors()) {
+            details.add(error.getField() + ": " + error.getDefaultMessage());
+        }
+        ErrorResponseDto response = new ErrorResponseDto(
+                ErrorCode.VALIDATION_ERROR,
+                "Validation failed for input data",
+                details
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
-    public ResponseEntity<@NonNull Map<String, String>> handleConstraintViolation(ConstraintViolationException ex) {
-        Map<String, String> errorResponse = new HashMap<>();
-        
-        errorResponse.put(KEY_ERROR, "Validation Error");
-        errorResponse.put(KEY_MESSAGE, ex.getMessage()); 
-
-        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST); // Ritorna 400
+    public ResponseEntity<ErrorResponseDto> handleConstraintViolation(ConstraintViolationException ex) {
+        ErrorResponseDto response = new ErrorResponseDto(ErrorCode.VALIDATION_ERROR, ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
-    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
-    public ResponseEntity<Map<String, String>> handleAccessDeniedException(org.springframework.security.access.AccessDeniedException ex) {
-        Map<String, String> errorResponse = new HashMap<>();
-        errorResponse.put(KEY_ERROR, "Forbidden");
-        errorResponse.put(KEY_MESSAGE, ex.getMessage());
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponseDto> handleAccessDeniedException(AccessDeniedException ex) {
+        ErrorResponseDto response = new ErrorResponseDto(ErrorCode.ACCESS_DENIED, ex.getMessage());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ErrorResponseDto> handleAuthenticationException(AuthenticationException ex) {
+        ErrorResponseDto response = new ErrorResponseDto(ErrorCode.BAD_CREDENTIALS, "Invalid email or password");
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
     }
 
     @ExceptionHandler(IllegalStateException.class)
-    public ResponseEntity<Map<String, String>> handleIllegalStateException(IllegalStateException ex) {
-        Map<String, String> errorResponse = new HashMap<>();
-        errorResponse.put(KEY_ERROR, "Bad Request");
-        errorResponse.put(KEY_MESSAGE, ex.getMessage());
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    public ResponseEntity<ErrorResponseDto> handleIllegalStateException(IllegalStateException ex) {
+        ErrorResponseDto response = new ErrorResponseDto(ErrorCode.INVALID_STATE_TRANSITION, ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 
     @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
-    public ResponseEntity<Map<String, String>> handleDataIntegrityViolationException(org.springframework.dao.DataIntegrityViolationException ex) {
-        Map<String, String> errorResponse = new HashMap<>();
-        errorResponse.put(KEY_ERROR, "Data Integrity Error");
-        errorResponse.put(KEY_MESSAGE, "The provided data violates database integrity constraints.");
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    public ResponseEntity<ErrorResponseDto> handleDataIntegrityViolationException(org.springframework.dao.DataIntegrityViolationException ex) {
+        ErrorResponseDto response = new ErrorResponseDto(
+                ErrorCode.DATA_INTEGRITY_VIOLATION,
+                "The provided data violates database integrity constraints."
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponseDto> handleGeneralException(Exception ex) {
+        ErrorResponseDto response = new ErrorResponseDto(
+                ErrorCode.INTERNAL_SERVER_ERROR,
+                "An unexpected internal server error occurred."
+        );
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
     }
 }

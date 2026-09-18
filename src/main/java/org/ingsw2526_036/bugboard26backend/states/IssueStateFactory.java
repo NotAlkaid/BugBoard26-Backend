@@ -10,7 +10,7 @@ public class IssueStateFactory {
 
     private IssueStateFactory() {
         // Costruttore privato per evitare l'instanziazione
-        throw new UnsupportedOperationException("Classe di utilità non istanziabile");
+        throw new UnsupportedOperationException("Utility class cannot be instantiated");
     }
     public static IssueState getState(StateEnum stateEnum) {
         // Gestione null safety

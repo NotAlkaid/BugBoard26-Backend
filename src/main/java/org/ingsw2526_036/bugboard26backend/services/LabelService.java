@@ -7,6 +7,8 @@ import org.ingsw2526_036.bugboard26backend.entities.Administrator;
 import org.ingsw2526_036.bugboard26backend.entities.Issue;
 import org.ingsw2526_036.bugboard26backend.entities.Label;
 import org.ingsw2526_036.bugboard26backend.entities.User;
+import org.ingsw2526_036.bugboard26backend.exception.DuplicateResourceException;
+import org.ingsw2526_036.bugboard26backend.exception.ErrorCode;
 import org.ingsw2526_036.bugboard26backend.exception.ResourceNotFoundException;
 import org.ingsw2526_036.bugboard26backend.repositories.IssueRepository;
 import org.ingsw2526_036.bugboard26backend.repositories.LabelRepository;
@@ -26,7 +28,7 @@ public class LabelService {
     @Transactional
     public Label createLabel(LabelRequestDto dto) {
         if (labelRepository.existsByName(dto.getName())) {
-            throw new IllegalArgumentException("Label with name '" + dto.getName() + "' already exists");
+            throw new DuplicateResourceException(ErrorCode.LABEL_ALREADY_EXISTS, "Label with name '" + dto.getName() + "' already exists");
         }
         Label label = new Label();
         label.setName(dto.getName());
@@ -40,7 +42,7 @@ public class LabelService {
 
     public Label getLabelById(Long id) {
         return labelRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Label not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.LABEL_NOT_FOUND, "Label not found with id: " + id));
     }
 
     @Transactional
@@ -51,7 +53,7 @@ public class LabelService {
         Label label = getLabelById(id);
         if (dto.getName() != null && !dto.getName().equals(label.getName())) {
             if (labelRepository.existsByName(dto.getName())) {
-                throw new IllegalArgumentException("Label with name '" + dto.getName() + "' already exists");
+                throw new DuplicateResourceException(ErrorCode.LABEL_ALREADY_EXISTS, "Label with name '" + dto.getName() + "' already exists");
             }
             label.setName(dto.getName());
         }

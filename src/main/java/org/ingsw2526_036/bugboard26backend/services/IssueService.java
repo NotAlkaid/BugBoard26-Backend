@@ -16,6 +16,8 @@ import org.ingsw2526_036.bugboard26backend.entities.Project;
 import org.ingsw2526_036.bugboard26backend.entities.User;
 import org.ingsw2526_036.bugboard26backend.enums.StateEnum;
 import org.ingsw2526_036.bugboard26backend.enums.TypeEnum;
+import org.ingsw2526_036.bugboard26backend.exception.BusinessRuleException;
+import org.ingsw2526_036.bugboard26backend.exception.ErrorCode;
 import org.ingsw2526_036.bugboard26backend.exception.ResourceNotFoundException;
 import org.ingsw2526_036.bugboard26backend.repositories.LabelRepository;
 import org.ingsw2526_036.bugboard26backend.repositories.UserRepository;
@@ -45,7 +47,7 @@ public class IssueService {
     @Transactional
     public Issue createIssue(Long projectId, IssueRequestDto issueRequestDto, User creator) {
         Project project = projectRepository.findById(projectId)
-                .orElseThrow(() -> new ResourceNotFoundException("Project not found with id: " + projectId));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.PROJECT_NOT_FOUND, "Project not found with id: " + projectId));
         Issue issue = issueMapper.toEntity(issueRequestDto);
         issue.setCreator(creator);
         issue.setProject(project);
@@ -61,7 +63,7 @@ public class IssueService {
     @Transactional
     public IssueResponseDto updateIssue(Long issueId, IssueRequestDto dto, User requester) {
         Issue issue = issueRepository.findById(issueId)
-                .orElseThrow(() -> new ResourceNotFoundException(ISSUE_NOT_FOUND_MSG + issueId));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.ISSUE_NOT_FOUND, ISSUE_NOT_FOUND_MSG + issueId));
 
         // Verifico i permessi in base allo stato
         checkModificationPermissions(issue, requester);
@@ -88,19 +90,19 @@ public class IssueService {
             case TODO:
                 // Nello stato iniziale (da fare): Solo Creatore o Admin
                 if (!isCreator && !isAdmin) {
-                    throw new AccessDeniedException("Solo il creatore o un amministratore possono modificare una issue in stato TODO.");
+                    throw new AccessDeniedException("Only the creator or an administrator can modify an issue in TODO state.");
                 }
                 break;
             case INPROGRESS:
                 // In INPROGRESS: Solo Assegnatario o Admin
                 if (!isAssignee && !isAdmin) {
-                    throw new AccessDeniedException("Solo l'assegnatario o un amministratore possono modificare una issue in stato INPROGRESS.");
+                    throw new AccessDeniedException("Only the assignee or an administrator can modify an issue in INPROGRESS state.");
                 }
                 break;
             case CLOSED:
                 // Solo Admin
                 if (!isAdmin) {
-                    throw new AccessDeniedException("Solo un amministratore può modificare una issue chiusa.");
+                    throw new AccessDeniedException("Only an administrator can modify a closed issue.");
                 }
                 break;
         }
@@ -109,25 +111,27 @@ public class IssueService {
     @Transactional
     public IssueResponseDto promoteIssue(Long issueId, User requester) {
         Issue issue = issueRepository.findById(issueId)
-                .orElseThrow(() -> new ResourceNotFoundException(ISSUE_NOT_FOUND_MSG + issueId));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.ISSUE_NOT_FOUND, ISSUE_NOT_FOUND_MSG + issueId));
 
         // Il passaggio da TO-DO a INPROGRESS deve avvenire esclusivamente tramite assegnazione (assignIssue)
         if (issue.getState() == StateEnum.TODO) {
-            throw new IllegalStateException("An issue in TODO state cannot be promoted directly; it must be assigned by an administrator.");
+            throw new BusinessRuleException(ErrorCode.INVALID_STATE_TRANSITION,
+                    "An issue in TODO state cannot be promoted directly; it must be assigned by an administrator.");
         }
 
         // Regola specifica: INPROGRESS -> CLOSED
         if (issue.getState() == StateEnum.INPROGRESS) {
             // Non è possibile chiudere una issue se non è assegnata
             if (issue.getAssignedTo() == null) {
-                throw new IllegalStateException("An issue in INPROGRESS state must have an assignee before it can be closed.");
+                throw new BusinessRuleException(ErrorCode.INVALID_STATE_TRANSITION,
+                        "An issue in INPROGRESS state must have an assignee before it can be closed.");
             }
 
             boolean isAdmin = requester instanceof Administrator;
             boolean isAssignee = issue.getAssignedTo().getId().equals(requester.getId());
 
             if (!isAssignee && !isAdmin) {
-                throw new AccessDeniedException("Solo l'assegnatario o un amministratore possono chiudere la issue.");
+                throw new AccessDeniedException("Only the assignee or an administrator can close the issue.");
             }
         }
 
@@ -140,17 +144,17 @@ public class IssueService {
     @Transactional
     public IssueResponseDto demoteIssue(Long issueId, User requester) {
         Issue issue = issueRepository.findById(issueId)
-                .orElseThrow(() -> new ResourceNotFoundException(ISSUE_NOT_FOUND_MSG + issueId));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.ISSUE_NOT_FOUND, ISSUE_NOT_FOUND_MSG + issueId));
 
         boolean isAdmin = requester instanceof Administrator;
 
         if (issue.getState() == StateEnum.CLOSED && !isAdmin) {
             // Riapertura di una issue chiusa: Solo Admin
-            throw new AccessDeniedException("Solo un amministratore può riaprire una issue chiusa.");
+            throw new AccessDeniedException("Only an administrator can reopen a closed issue.");
         } else if (issue.getState() == StateEnum.INPROGRESS) {
             // Retrocessione allo stato iniziale: Solo Admin
             if (!isAdmin) {
-                throw new AccessDeniedException("Solo un amministratore può demote la issue a TODO.");
+                throw new AccessDeniedException("Only an administrator can demote the issue to TODO.");
             }
             // Rimozione dell'assegnatario quando si torna in TO-DO
             if (issue.getAssignedTo() != null) {
@@ -171,17 +175,17 @@ public class IssueService {
     @Transactional
     public IssueResponseDto assignIssue(Long issueId, Long userId, User requester) {
         Issue issue = issueRepository.findById(issueId)
-                .orElseThrow(() -> new ResourceNotFoundException(ISSUE_NOT_FOUND_MSG + issueId));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.ISSUE_NOT_FOUND, ISSUE_NOT_FOUND_MSG + issueId));
         // Solo Admin può assegnare
         if (!(requester instanceof Administrator)) {
             throw new AccessDeniedException("Only Administrators can assign issues.");
         }
         // Recupera l'utente da assegnare
         User assignee = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User to assign not found with id: " + userId));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.USER_NOT_FOUND, "User to assign not found with id: " + userId));
 
         if (assignee.getJoinedProjects() == null || !assignee.getJoinedProjects().contains(issue.getProject())) {
-            throw new IllegalArgumentException("User with id " + assignee.getId() +
+            throw new BusinessRuleException(ErrorCode.USER_NOT_IN_PROJECT, "User with id " + assignee.getId() +
                     " is not a participant of the project with id " + issue.getProject().getId());
         }
 
@@ -221,7 +225,7 @@ public class IssueService {
                                             IssueFilterDto filter,
                                             Pageable pageable) {
         if (!projectRepository.existsById(projectId)) {
-            throw new ResourceNotFoundException("Project not found with id: " + projectId);
+            throw new ResourceNotFoundException(ErrorCode.PROJECT_NOT_FOUND, "Project not found with id: " + projectId);
         }
 
         Specification<Issue> spec = IssueSpecification.withFilters(projectId, filter);
@@ -233,13 +237,14 @@ public class IssueService {
     @Transactional
     public IssueResponseDto getIssueById(Long projectId, Long issueId) {
         if (!projectRepository.existsById(projectId)) {
-            throw new ResourceNotFoundException("Project not found with id: " + projectId);
+            throw new ResourceNotFoundException(ErrorCode.PROJECT_NOT_FOUND, "Project not found with id: " + projectId);
         }
         Issue issue = issueRepository.findById(issueId)
-                .orElseThrow(() -> new ResourceNotFoundException(ISSUE_NOT_FOUND_MSG + issueId));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.ISSUE_NOT_FOUND, ISSUE_NOT_FOUND_MSG + issueId));
 
         if (!issue.getProject().getId().equals(projectId)) {
-            throw new ResourceNotFoundException("Issue with id " + issueId + " does not belong to project " + projectId);
+            throw new BusinessRuleException(ErrorCode.ISSUE_NOT_IN_PROJECT,
+                    "Issue with id " + issueId + " does not belong to project " + projectId);
         }
 
         return issueMapper.toDto(issue);
@@ -248,7 +253,7 @@ public class IssueService {
     @Transactional
     public IssueSummaryDto getIssueSummary(Long projectId) {
         if (!projectRepository.existsById(projectId)) {
-            throw new ResourceNotFoundException("Project not found with id: " + projectId);
+            throw new ResourceNotFoundException(ErrorCode.PROJECT_NOT_FOUND, "Project not found with id: " + projectId);
         }
         long total = issueRepository.countByProjectId(projectId);
         long open = issueRepository.countByProjectIdAndStateIn(projectId, List.of(StateEnum.TODO, StateEnum.INPROGRESS));
@@ -260,14 +265,14 @@ public class IssueService {
     @Transactional
     public IssueResponseDto addLabelToIssue(Long issueId, Long labelId, User requester) {
         Issue issue = issueRepository.findById(issueId)
-                .orElseThrow(() -> new ResourceNotFoundException(ISSUE_NOT_FOUND_MSG + issueId));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.ISSUE_NOT_FOUND, ISSUE_NOT_FOUND_MSG + issueId));
         Label label = labelRepository.findById(labelId)
-                .orElseThrow(() -> new ResourceNotFoundException("Label not found with id: " + labelId));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.LABEL_NOT_FOUND, "Label not found with id: " + labelId));
 
         checkModificationPermissions(issue, requester);
 
         if (issue.getLabels().size() >= 10 && !issue.getLabels().contains(label)) {
-            throw new IllegalArgumentException("An issue cannot have more than 10 labels.");
+            throw new BusinessRuleException(ErrorCode.MAX_LABELS_EXCEEDED, "An issue cannot have more than 10 labels.");
         }
 
         issue.getLabels().add(label);
@@ -278,9 +283,9 @@ public class IssueService {
     @Transactional
     public IssueResponseDto removeLabelFromIssue(Long issueId, Long labelId, User requester) {
         Issue issue = issueRepository.findById(issueId)
-                .orElseThrow(() -> new ResourceNotFoundException(ISSUE_NOT_FOUND_MSG + issueId));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.ISSUE_NOT_FOUND, ISSUE_NOT_FOUND_MSG + issueId));
         Label label = labelRepository.findById(labelId)
-                .orElseThrow(() -> new ResourceNotFoundException("Label not found with id: " + labelId));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.LABEL_NOT_FOUND, "Label not found with id: " + labelId));
 
         checkModificationPermissions(issue, requester);
 
@@ -292,12 +297,12 @@ public class IssueService {
     @Transactional
     public IssueResponseDto setIssueLabels(Long issueId, Set<Long> labelIds, User requester) {
         Issue issue = issueRepository.findById(issueId)
-                .orElseThrow(() -> new ResourceNotFoundException(ISSUE_NOT_FOUND_MSG + issueId));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.ISSUE_NOT_FOUND, ISSUE_NOT_FOUND_MSG + issueId));
 
         checkModificationPermissions(issue, requester);
 
         if (labelIds != null && labelIds.size() > 10) {
-            throw new IllegalArgumentException("An issue cannot have more than 10 labels.");
+            throw new BusinessRuleException(ErrorCode.MAX_LABELS_EXCEEDED, "An issue cannot have more than 10 labels.");
         }
 
         Set<Label> newLabels = new HashSet<>();

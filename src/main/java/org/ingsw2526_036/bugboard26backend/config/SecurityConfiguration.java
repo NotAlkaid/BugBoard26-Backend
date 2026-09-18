@@ -18,7 +18,12 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.ingsw2526_036.bugboard26backend.dtos.ErrorResponseDto;
+import org.ingsw2526_036.bugboard26backend.exception.ErrorCode;
+import org.springframework.http.MediaType;
 
 @Configuration
 @EnableWebSecurity
@@ -29,6 +34,7 @@ public class SecurityConfiguration {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final AuthenticationProvider authenticationProvider;
+    private final ObjectMapper objectMapper;
 
     @Value("${app.cors.allowed-origins:http://localhost:5173}")
     private String allowedOrigins;
@@ -57,7 +63,27 @@ public class SecurityConfiguration {
                 // Gestione della sessione Stateless
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider)
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                            ErrorResponseDto errorDto = new ErrorResponseDto(
+                                    ErrorCode.TOKEN_EXPIRED,
+                                    "Full authentication is required to access this resource"
+                            );
+                            objectMapper.writeValue(response.getOutputStream(), errorDto);
+                        })
+                        .accessDeniedHandler((request, response, accessDeniedException) -> {
+                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+                            ErrorResponseDto errorDto = new ErrorResponseDto(
+                                    ErrorCode.ACCESS_DENIED,
+                                    "Access denied: you do not have permission to access this resource"
+                            );
+                            objectMapper.writeValue(response.getOutputStream(), errorDto);
+                        })
+                );
         return http.build();
     }
 

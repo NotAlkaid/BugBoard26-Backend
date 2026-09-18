@@ -7,6 +7,8 @@ import org.ingsw2526_036.bugboard26backend.entities.Administrator;
 import org.ingsw2526_036.bugboard26backend.entities.BaseUser;
 import org.ingsw2526_036.bugboard26backend.entities.User;
 import org.ingsw2526_036.bugboard26backend.enums.RoleEnum;
+import org.ingsw2526_036.bugboard26backend.exception.BusinessRuleException;
+import org.ingsw2526_036.bugboard26backend.exception.ErrorCode;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
@@ -42,7 +44,7 @@ public class UserMapper {
             user = new BaseUser();
         } 
         else {
-            throw new IllegalArgumentException("Unknown user type: " + typeInput);
+            throw new BusinessRuleException(ErrorCode.BAD_REQUEST, "Unknown user type: " + typeInput);
         }
 
         user.setEmail(userRequestDto.getEmail());

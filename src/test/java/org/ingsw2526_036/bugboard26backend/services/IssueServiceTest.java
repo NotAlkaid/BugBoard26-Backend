@@ -495,7 +495,7 @@ class IssueServiceTest {
                     () -> issueService.updateIssue(issueId, dto, otherUser)
             );
 
-            assertEquals("Solo il creatore o un amministratore possono modificare una issue in stato TODO.", exception.getMessage());
+            assertEquals("Only the creator or an administrator can modify an issue in TODO state.", exception.getMessage());
             verify(issueRepository, never()).save(any());
         }
 
@@ -544,7 +544,7 @@ class IssueServiceTest {
                     () -> issueService.updateIssue(issueId, dto, creatorUser)
             );
 
-            assertEquals("Solo l'assegnatario o un amministratore possono modificare una issue in stato INPROGRESS.", exception.getMessage());
+            assertEquals("Only the assignee or an administrator can modify an issue in INPROGRESS state.", exception.getMessage());
             verify(issueRepository, never()).save(any());
         }
 
@@ -591,7 +591,7 @@ class IssueServiceTest {
                     () -> issueService.updateIssue(issueId, dto, assigneeUser)
             );
 
-            assertEquals("Solo un amministratore può modificare una issue chiusa.", exception.getMessage());
+            assertEquals("Only an administrator can modify a closed issue.", exception.getMessage());
             verify(issueRepository, never()).save(any());
         }
 

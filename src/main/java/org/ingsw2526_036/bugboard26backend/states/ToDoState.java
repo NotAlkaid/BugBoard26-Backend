@@ -11,6 +11,6 @@ public class ToDoState implements IssueState {
 
     @Override
     public void previous(Issue issue) {
-        throw new IllegalStateException("L'Issue è già nello stato iniziale TODO.");
+        throw new IllegalStateException("Issue is already in the initial state TODO.");
     }
 }

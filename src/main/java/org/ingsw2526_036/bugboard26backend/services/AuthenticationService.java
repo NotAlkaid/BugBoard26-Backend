@@ -9,6 +9,7 @@ import org.ingsw2526_036.bugboard26backend.dtos.AuthenticationRequestDto;
 import org.ingsw2526_036.bugboard26backend.dtos.AuthenticationResponseDto;
 import org.ingsw2526_036.bugboard26backend.entities.User;
 import org.ingsw2526_036.bugboard26backend.exception.DuplicateResourceException;
+import org.ingsw2526_036.bugboard26backend.exception.ErrorCode;
 import org.ingsw2526_036.bugboard26backend.repositories.UserRepository;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -36,10 +37,10 @@ public class AuthenticationService {
     @Transactional
     public AuthenticationResponseDto createUser(User user) {
         if(userRepository.existsByEmail(user.getEmail())) {
-            throw new DuplicateResourceException("Email already in use");
+            throw new DuplicateResourceException(ErrorCode.EMAIL_ALREADY_IN_USE, "Email already in use");
         }
         if(userRepository.existsByUsername(user.getUsername())) {
-            throw new DuplicateResourceException("Username already in use");
+            throw new DuplicateResourceException(ErrorCode.USERNAME_ALREADY_IN_USE, "Username already in use");
         }
         userRepository.save(user);
         var jwtToken = jwtService.generateToken(getCustomClaims(user), new SecurityUser(user));

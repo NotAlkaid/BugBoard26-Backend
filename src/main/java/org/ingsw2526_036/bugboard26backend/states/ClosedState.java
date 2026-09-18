@@ -6,7 +6,7 @@ import org.ingsw2526_036.bugboard26backend.enums.StateEnum;
 public class ClosedState implements IssueState {
     @Override
     public void next(Issue issue) {
-        throw new IllegalStateException("L'Issue è chiusa e non può avanzare.");
+        throw new IllegalStateException("Issue is closed and cannot advance.");
     }
 
     @Override

@@ -1,10 +1,13 @@
 package org.ingsw2526_036.bugboard26backend.config;
 
+import io.swagger.v3.core.converter.ModelConverters;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
+import org.ingsw2526_036.bugboard26backend.dtos.ErrorResponseDto;
+import org.springdoc.core.customizers.OpenApiCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -29,5 +32,14 @@ public class OpenApiConfig {
                                         .scheme("bearer")
                                         .bearerFormat("JWT")
                                         .description("Inserisci il token JWT (ottenuto da /api/v1/auth/authenticate)")));
+    }
+
+    @Bean
+    public OpenApiCustomizer schemaCustomizer() {
+        return openApi -> {
+            ModelConverters.getInstance()
+                    .readAll(ErrorResponseDto.class)
+                    .forEach(openApi.getComponents()::addSchemas);
+        };
     }
 }

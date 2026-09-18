@@ -8,6 +8,8 @@ import org.ingsw2526_036.bugboard26backend.entities.Administrator;
 import org.ingsw2526_036.bugboard26backend.entities.Comment;
 import org.ingsw2526_036.bugboard26backend.entities.Issue;
 import org.ingsw2526_036.bugboard26backend.entities.User;
+import org.ingsw2526_036.bugboard26backend.exception.BusinessRuleException;
+import org.ingsw2526_036.bugboard26backend.exception.ErrorCode;
 import org.ingsw2526_036.bugboard26backend.exception.ResourceNotFoundException;
 import org.ingsw2526_036.bugboard26backend.mappers.CommentMapper;
 import org.ingsw2526_036.bugboard26backend.repositories.CommentRepository;
@@ -31,14 +33,14 @@ public class CommentService {
     @Transactional
     public CommentResponseDto addComment(Long projectId, Long issueId, CommentRequestDto dto, User authUser) {
         Issue issue = issueRepository.findById(issueId)
-                .orElseThrow(() -> new ResourceNotFoundException("Issue not found with id: " + issueId));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.ISSUE_NOT_FOUND, "Issue not found with id: " + issueId));
 
         if (!issue.getProject().getId().equals(projectId)) {
-            throw new IllegalArgumentException("Issue with id " + issueId + " does not belong to project with id " + projectId);
+            throw new BusinessRuleException(ErrorCode.ISSUE_NOT_IN_PROJECT, "Issue with id " + issueId + " does not belong to project with id " + projectId);
         }
 
         User creator = userRepository.findById(authUser.getId())
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + authUser.getId()));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.USER_NOT_FOUND, "User not found with id: " + authUser.getId()));
 
         boolean isAdmin = creator instanceof Administrator;
         boolean isParticipant = creator.getJoinedProjects() != null &&
@@ -59,10 +61,10 @@ public class CommentService {
     @Transactional
     public List<Comment> getCommentsByIssue(Long projectId, Long issueId) {
         Issue issue = issueRepository.findById(issueId)
-                .orElseThrow(() -> new ResourceNotFoundException("Issue not found with id: " + issueId));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.ISSUE_NOT_FOUND, "Issue not found with id: " + issueId));
 
         if (!issue.getProject().getId().equals(projectId)) {
-            throw new IllegalArgumentException("Issue with id " + issueId + " does not belong to project with id " + projectId);
+            throw new BusinessRuleException(ErrorCode.ISSUE_NOT_IN_PROJECT, "Issue with id " + issueId + " does not belong to project with id " + projectId);
         }
 
         return commentRepository.findByIssueIdOrderByIdAsc(issueId);

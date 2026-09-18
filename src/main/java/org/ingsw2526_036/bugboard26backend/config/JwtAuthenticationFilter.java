@@ -14,7 +14,11 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.JwtException;
+import org.ingsw2526_036.bugboard26backend.dtos.ErrorResponseDto;
+import org.ingsw2526_036.bugboard26backend.exception.ErrorCode;
+import org.springframework.http.MediaType;
 
 import java.io.IOException;
 
@@ -24,6 +28,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
+    private final ObjectMapper objectMapper;
 
     @Override
     protected void doFilterInternal(
@@ -64,7 +69,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
         catch (JwtException e) {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.getWriter().write("Invalid or expired JWT token");
+            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+            ErrorResponseDto errorDto = new ErrorResponseDto(
+                    ErrorCode.TOKEN_EXPIRED,
+                    "Invalid or expired JWT token"
+            );
+            objectMapper.writeValue(response.getOutputStream(), errorDto);
             return;
         }
         filterChain.doFilter(request, response);
