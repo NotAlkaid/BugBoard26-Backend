@@ -1,0 +1,119 @@
+name: CI/CD - Build, Package & Deploy to Azure PaaS
+
+on:
+  push:
+    branches: [ "master", "main" ]
+  pull_request:
+    branches: [ "master", "main" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-test:
+    name: 🧪 Maven Build & Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: ☕ Setup Java 21 (Eclipse Temurin)
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: 🔑 Make Maven Wrapper Executable
+        run: chmod +x mvnw
+
+      - name: 🔨 Compile and Run Unit Tests
+        run: ./mvnw clean test -B
+
+  build-and-deploy:
+    name: 📦 Package SPA & Deploy Docker Image
+    needs: build-and-test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout Backend Repository
+        uses: actions/checkout@v4
+
+      - name: 📥 Checkout Frontend Repository
+        uses: actions/checkout@v4
+        with:
+          repository: marco7144/BugBoard26-Frontend
+          path: frontend
+
+      - name: 🟢 Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: 'frontend/package-lock.json'
+
+      - name: 📦 Install Frontend Dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: 🏗️ Build Frontend SPA
+        working-directory: frontend
+        run: npm run build
+        env:
+          VITE_BASE_PATH: /
+          VITE_API_BASE_URL: ""
+
+      - name: 🚚 Copy Frontend Build into Spring Boot Static Resources
+        run: |
+          mkdir -p src/main/resources/static
+          cp -r frontend/dist/* src/main/resources/static/
+          ls -la src/main/resources/static/
+
+      - name: 🐳 Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 🏷️ Determine Image Name (lowercase)
+        id: meta
+        run: |
+          OWNER_LOWER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          IMAGE="ghcr.io/${OWNER_LOWER}/bugboard26"
+          echo "image_name=${IMAGE}" >> $GITHUB_OUTPUT
+          echo "sha_tag=${IMAGE}:${{ github.sha }}" >> $GITHUB_OUTPUT
+          echo "latest_tag=${IMAGE}:latest" >> $GITHUB_OUTPUT
+
+      - name: 🔑 Log in to GitHub Container Registry
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🏗️ Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
+          tags: |
+            ${{ steps.meta.outputs.latest_tag }}
+            ${{ steps.meta.outputs.sha_tag }}
+
+      - name: 🚀 Notify Azure App Service Webhook
+        if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && env.AZURE_WEBHOOK_URL != ''
+        env:
+          AZURE_WEBHOOK_URL: ${{ secrets.AZURE_WEBHOOK_URL }}
+        run: |
+          echo "Triggering continuous deployment webhook on Azure App Service..."
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$AZURE_WEBHOOK_URL")
+          echo "Webhook response HTTP code: $RESPONSE"
+          if [ "$RESPONSE" -ge 200 ] && [ "$RESPONSE" -lt 300 ]; then
+            echo "✅ Azure App Service deployment triggered successfully!"
+          else
+            echo "⚠️ Webhook responded with status $RESPONSE (check URL or credentials)."
+          fi

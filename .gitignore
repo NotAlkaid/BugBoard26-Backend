@@ -34,3 +34,6 @@ build/
 .env
 
 /notes
+src/main/resources/static/
+Caddyfile
+docker-compose.prod.yml

@@ -58,7 +58,8 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.POST, "/api/projects/*/participants").hasRole(ROLE_ADMIN)
                         .requestMatchers(HttpMethod.PUT, "/api/labels/**").hasRole(ROLE_ADMIN)
                         .requestMatchers(HttpMethod.DELETE, "/api/labels/**").hasRole(ROLE_ADMIN)
-                        .anyRequest().authenticated()
+                        .requestMatchers("/api/**").authenticated()
+                        .anyRequest().permitAll()
                 )
                 // Gestione della sessione Stateless
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
