@@ -109,7 +109,7 @@ public class IssueService {
     }
 
     @Transactional
-    public IssueResponseDto promoteIssue(Long issueId, User requester) {
+    public IssueResponseDto promoteIssue(Long issueId, User requester, String resolutionNote) {
         Issue issue = issueRepository.findById(issueId)
                 .orElseThrow(() -> new ResourceNotFoundException(ErrorCode.ISSUE_NOT_FOUND, ISSUE_NOT_FOUND_MSG + issueId));
 
@@ -133,6 +133,10 @@ public class IssueService {
             if (!isAssignee && !isAdmin) {
                 throw new AccessDeniedException("Only the assignee or an administrator can close the issue.");
             }
+
+            if (resolutionNote != null && !resolutionNote.isBlank()) {
+                issue.setResolutionNote(resolutionNote.trim());
+            }
         }
 
         issue.promote();
@@ -148,9 +152,13 @@ public class IssueService {
 
         boolean isAdmin = requester instanceof Administrator;
 
-        if (issue.getState() == StateEnum.CLOSED && !isAdmin) {
+        if (issue.getState() == StateEnum.CLOSED) {
             // Riapertura di una issue chiusa: Solo Admin
-            throw new AccessDeniedException("Only an administrator can reopen a closed issue.");
+            if (!isAdmin) {
+                throw new AccessDeniedException("Only an administrator can reopen a closed issue.");
+            }
+            // Reset della nota di risoluzione alla riapertura
+            issue.setResolutionNote(null);
         } else if (issue.getState() == StateEnum.INPROGRESS) {
             // Retrocessione allo stato iniziale: Solo Admin
             if (!isAdmin) {

@@ -3,6 +3,7 @@ package org.ingsw2526_036.bugboard26backend.controllers;
 import java.util.Set;
 
 import org.ingsw2526_036.bugboard26backend.dtos.IssueFilterDto;
+import org.ingsw2526_036.bugboard26backend.dtos.IssuePromoteDto;
 import org.ingsw2526_036.bugboard26backend.dtos.IssueRequestDto;
 import org.ingsw2526_036.bugboard26backend.dtos.IssueResponseDto;
 import org.ingsw2526_036.bugboard26backend.dtos.IssueSummaryDto;
@@ -112,8 +113,10 @@ public class IssueController {
     //Endpoint PATCH /api/projects/{projectId}/issues/{issueId}/promote.
     @PatchMapping("/{issueId}/promote")
     public ResponseEntity<IssueResponseDto> promoteIssue(@PathVariable Long issueId,
+                                                         @Valid @RequestBody(required = false) IssuePromoteDto dto,
                                                          @AuthenticationPrincipal User requester) {
-        IssueResponseDto responseDto = issueService.promoteIssue(issueId, requester);
+        String resolutionNote = (dto != null) ? dto.getResolutionNote() : null;
+        IssueResponseDto responseDto = issueService.promoteIssue(issueId, requester, resolutionNote);
         return ResponseEntity.ok(responseDto);
     }
 

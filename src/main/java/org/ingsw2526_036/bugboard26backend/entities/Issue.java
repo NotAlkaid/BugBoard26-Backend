@@ -57,6 +57,8 @@ public class Issue {
     private Date creationDate;
     @Column(nullable = true)
     private byte[] image;
+    @Column(nullable = true, length = 500)
+    private String resolutionNote;
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     @NonNull

@@ -24,5 +24,6 @@ public class IssueResponseDto {
     private String assignedToUsername;
     private Long projectId;
     private String projectName;
+    private String resolutionNote;
     private Set<LabelResponseDto> labels;
 }
